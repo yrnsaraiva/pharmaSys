@@ -11,6 +11,13 @@ SECRET_KEY = 'django-insecure-o%cf1_-^p95dr-aupdnimbg_-k@xugqx70f79_##63h9&ox1!y
 DEBUG = True
 ALLOWED_HOSTS = ['*']  # Ajuste para produção
 
+# Permitir o domínio do seu site para POSTs
+CSRF_TRUSTED_ORIGINS = [
+    'https://pharmasys-production.up.railway.app',
+    'http://pharmasys-production.up.railway.app',
+]
+
+
 # ==========================
 # SESSION SETTINGS
 # ==========================
