@@ -1,0 +1,163 @@
+{% extends 'main.html' %}
+
+{% block content %}
+
+    {% include 'navbar.html' %}
+
+    <div class="flex-1 ml-64 p-8" id="main-content">
+        <div class="flex justify-between items-center mb-8" id="page-header">
+            <div>
+                <h2 class="text-xl font-bold text-gray-900 mb-2">Gestão de Categorias</h2>
+                <p class="text-gray-600">Gerencie categorias de produtos e medicamentos</p>
+            </div>
+            <a class="bg-pharmacy-green hover:bg-pharmacy-green-dark text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm"
+               id="add-category-btn" href="{% url 'criar_categoria' %}">
+                <i class="mr-2">
+                    <svg aria-hidden="true" class="svg-inline--fa fa-plus" viewBox="0 0 448 512"
+                         xmlns="http://www.w3.org/2000/svg">
+                        <path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32
+                                 32V224H48c-17.7 0-32 14.3-32
+                                 32s14.3 32 32 32H192V432c0
+                                 17.7 14.3 32 32 32s32-14.3
+                                 32-32V288H400c17.7 0 32-14.3
+                                 32-32s-14.3-32-32-32H256V80z"
+                              fill="currentColor"></path>
+                    </svg>
+                </i>
+                Adicionar Categoria
+            </a>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-pharmacy-gray p-6 mb-6" id="filters-section">
+            <form method="get" class="flex items-center gap-4">
+                <!-- Buscar por nome -->
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Buscar por nome</label>
+                    <div class="relative">
+                        <input type="text" name="search" value="{{ request.GET.search }}"
+                               placeholder="Digite o nome da categoria..."
+                               class="w-full pl-10 pr-4 py-2 border border-pharmacy-gray rounded-lg focus:ring-2 focus:ring-pharmacy-green focus:border-transparent">
+                        <i class="absolute left-3 top-3 text-gray-400">
+                            <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 512 512">
+                                <path d="M416 208c0 45.9-14.9 88.3-40
+                                122.7L502.6 457.4c12.5 12.5
+                                12.5 32.8 0 45.3s-32.8
+                                12.5-45.3 0L330.7 376c-34.4
+                                25.2-76.8 40-122.7 40C93.1
+                                416 0 322.9 0 208S93.1 0 208
+                                0S416 93.1 416 208zM208 352a144
+                                144 0 1 0 0-288 144 144 0 1 0
+                                0 288z"
+                                      fill="currentColor"></path>
+                            </svg>
+                        </i>
+                    </div>
+                </div>
+
+                <!-- Botão de pesquisa -->
+                <button type="submit"
+                        class="bg-pharmacy-green hover:bg-pharmacy-green-dark text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm">
+                    Pesquisar
+                </button>
+            </form>
+        </div>
+
+        <!-- Tabela de Categorias -->
+        <div class="bg-white rounded-lg shadow-sm border border-pharmacy-gray overflow-hidden"
+             id="categories-table-container">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-pharmacy-gray-light">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Nome</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Tipo</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Descrição</th>
+                        <th class="px-6 py-4 text-center text-sm font-semibold text-gray-900">Ações</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-pharmacy-gray" id="categories-tbody">
+                    {% for categoria in categorias %}
+                        <tr class="hover:bg-pharmacy-gray-light/50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="font-medium text-gray-900">{{ categoria.nome }}</div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-900">{{ categoria.tipo|title }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-700">
+                                {{ categoria.descricao|default:"—" }}
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <div class="flex justify-center space-x-2">
+                                    <a href="{% url 'remover_categoria' categoria.id %}"
+                                       onclick="return confirm('Tem certeza que deseja remover {{ categoria.nome }}?');"
+                                       class="text-red-500 hover:text-red-700">
+                                        <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 448 512"
+                                             xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M135.2 17.7L128 32H32C14.3 32
+                                            0 46.3 0 64S14.3 96 32
+                                            96H416c17.7 0 32-14.3
+                                            32-32s-14.3-32-32-32H320l-7.2-14.3C307.4
+                                            6.8 296.3 0 284.2
+                                            0H163.8c-12.1 0-23.2
+                                            6.8-28.6 17.7zM416 128H32L53.2
+                                            467c1.6 25.3 22.6 45
+                                            47.9 45H346.9c25.3
+                                            0 46.3-19.7 47.9-45L416
+                                            128z"
+                                                  fill="currentColor"></path>
+                                        </svg>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="px-6 py-4 text-center text-gray-500">
+                                Nenhuma categoria encontrada.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Paginação -->
+        <div class="flex justify-between items-center mt-6" id="pagination">
+            <div class="text-sm text-gray-700">
+                Mostrando
+                <span class="font-medium">{{ page_obj.start_index }}</span>
+                a
+                <span class="font-medium">{{ page_obj.end_index }}</span>
+                de
+                <span class="font-medium">{{ page_obj.paginator.count }}</span> categorias
+            </div>
+
+            <div class="flex space-x-1">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}"
+                       class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Anterior</a>
+                {% else %}
+                    <span class="px-3 py-1 bg-gray-100 text-gray-400 rounded">Anterior</span>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <span class="px-3 py-1 bg-green-600 text-white rounded">{{ num }}</span>
+                    {% else %}
+                        <a href="?page={{ num }}"
+                           class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}"
+                       class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Próxima</a>
+                {% else %}
+                    <span class="px-3 py-1 bg-gray-100 text-gray-400 rounded">Próxima</span>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+{% endblock %}

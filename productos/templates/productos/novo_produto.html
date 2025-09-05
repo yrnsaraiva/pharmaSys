@@ -1,0 +1,173 @@
+{% extends 'main.html' %}
+{% block content %}
+
+    {% include 'navbar.html' %}
+
+    <div class="flex-1 ml-64 p-8" id="main-content">
+            <div class="mb-8" id="page-header">
+                <div class="flex items-center mb-4">
+                    <button onclick="window.history.back()"
+                            class="text-gray-500 hover:text-gray-700 mr-4 transition-colors">
+                        <i class="text-lg">
+                            <svg aria-hidden="true" class="w-5 h-5" viewBox="0 0 448 512">
+                                <path d="M9.4 233.4c-12.5 12.5-12.5 32.8
+                            0 45.3l160 160c12.5 12.5 32.8 12.5
+                            45.3 0s12.5-32.8 0-45.3L109.2
+                            288H416c17.7 0 32-14.3
+                            32-32s-14.3-32-32-32H109.2l105.5-105.4c12.5-12.5
+                            12.5-32.8 0-45.3s-32.8-12.5-45.3
+                            0l-160 160z" fill="currentColor"/>
+                            </svg>
+                        </i>
+                    </button>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900 mb-2">Novo Produto</h2>
+                        <p class="text-gray-600">Cadastre um novo produto no sistema</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-pharmacy-gray p-8">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Nome -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Nome <span
+                                    class="text-red-500">*</span></label>
+                            <input type="text" name="nome" required value="{{ producto.nome }}"
+                                   class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                        </div>
+
+                        <!-- Código de Barras -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Código de Barras <span
+                                    class="text-red-500">*</span></label>
+                            <input type="text" name="codigo_barras" required value="{{ producto.codigo_barras }}"
+                                   class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                        </div>
+
+                        <!-- Categoria -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Categoria</label>
+                            <select name="categoria"
+                                    class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                                {% for categoria in categorias %}
+                                    <option value="{{ categoria.id }}">{{ categoria.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Fornecedor -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Fornecedor</label>
+                            <select name="fornecedor"
+                                    class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                                {% for fornecedor in fornecedores %}
+                                    <option value="{{ fornecedor.id }}">{{ fornecedor.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Preço Venda -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Preço Venda (MZN)</label>
+                            <input type="number" step="0.01" name="preco_venda" value="{{ producto.preco_venda }}"
+                                   class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                        </div>
+
+                        <!-- Preço Compra -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Preço Compra (MZN)</label>
+                            <input type="number" step="0.01" name="preco_compra" value="{{ producto.preco_compra }}"
+                                   class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                        </div>
+
+                        <!-- Estoque mínimo -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Estoque Mínimo</label>
+                            <input type="number" name="estoque_minimo" value="{{ producto.estoque_minimo }}"
+                                   class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                        </div>
+
+                        <!-- Forma farmacêutica -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Forma Farmacêutica</label>
+                            <select name="forma_farmaceutica"
+                                    class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                                <option value="">-- Selecione --</option>
+                                <option value="comprimido">Comprimido</option>
+                                <option value="capsula">Cápsula</option>
+                                <option value="xarope">Xarope</option>
+                                <option value="injecao">Injetável</option>
+                                <option value="pomada">Pomada</option>
+                                <option value="supositorio">Supositório</option>
+                                <option value="spray">Spray</option>
+                                <option value="outro">Outro</option>
+                            </select>
+                        </div>
+
+                        <!-- Dosagem -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Dosagem</label>
+                            <input type="text" name="dosagem" placeholder="Ex: 500mg, 20mg/mL" value="{{ producto.dosagem }}"
+                                   class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                        </div>
+
+                        <!-- Nível de prescrição -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Nível de Prescrição</label>
+                            <select name="nivel_prescricao"
+                                    class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                                <option value="niv0">Niv 0</option>
+                                <option value="niv1">Niv 1</option>
+                                <option value="niv2">Niv 2</option>
+                                <option value="niv3">Niv 3</option>
+                                <option value="niv4">Niv 4</option>
+                            </select>
+                        </div>
+
+                        <!-- Princípio ativo -->
+                        <div class="lg:col-span-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Princípio Ativo</label>
+                            <input type="text" name="principio_ativo" value="{{ producto.principio_ativo }}"
+                                   class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                        </div>
+
+                        <!-- Controlado -->
+                        <div class="lg:col-span-2">
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="controlado"
+                                       class="w-4 h-4 text-pharmacy-green border-gray-300 rounded">
+                                <span class="ml-2 text-gray-700">Medicamento controlado</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Botões -->
+                    <div class="flex justify-end space-x-4 mt-8 pt-6 border-t border-pharmacy-gray">
+                        <a href="{% url 'productos_list' %}"
+                           class="px-6 py-3 border border-pharmacy-gray text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium flex items-center">
+                            Cancelar
+                        </a>
+                        <button type="submit"
+                                class="px-6 py-3 bg-pharmacy-green hover:bg-pharmacy-green-dark text-white rounded-lg transition-colors font-medium flex items-center shadow-lg">
+                            <svg class="mr-2 w-5 h-5" viewBox="0 0 448 512" fill="currentColor">
+                                <path d="M438.6 105.4c12.5 12.5
+                            12.5 32.8 0 45.3l-256 256c-12.5
+                            12.5-32.8 12.5-45.3
+                            0l-128-128c-12.5-12.5-12.5-32.8
+                            0-45.3s32.8-12.5 45.3 0L160
+                            338.7 393.4 105.4c12.5-12.5
+                            32.8-12.5 45.3 0z"/>
+                            </svg>
+                            Salvar Produto
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+{% endblock %}

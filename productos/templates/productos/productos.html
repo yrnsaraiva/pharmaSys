@@ -1,0 +1,286 @@
+{% extends 'main.html' %}
+{% block content %}
+
+    {% include 'navbar.html' %}
+
+    <div class="flex-1 ml-64 p-8" id="main-content">
+        <div class="mb-8" id="page-header">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900 mb-2">Gestão de Estoque</h2>
+                    <p class="text-gray-600">Controle completo do inventário da farmácia</p>
+                </div>
+                <div class="flex justify-between">
+                    <a class="bg-pharmacy-green hover:bg-pharmacy-green-dark text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center shadow-lg mx-2"
+                       id="add-product-btn" href="{% url 'cadastrar_producto' %}">
+                        <i class="mr-2" data-fa-i2svg="">
+                            <svg aria-hidden="true" class="svg-inline--fa fa-plus" data-fa-i2svg="" data-icon="plus"
+                                 data-prefix="fas" focusable="false" role="img" viewBox="0 0 448 512"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"
+                                      fill="currentColor"></path>
+                            </svg>
+                        </i>
+                        Adicionar Produto
+                    </a>
+
+                    <a class="bg-pharmacy-green hover:bg-pharmacy-green-dark text-white px-6 py-3 rounded-xl font-medium transition-colors shadow-lg mx-2"
+                       href="{% url 'categorias_list' %}">
+                        Gerenciar categorias
+                    </a>
+
+                    <a class="bg-pharmacy-green hover:bg-pharmacy-green-dark text-white px-6 py-3 rounded-xl font-medium transition-colors shadow-lg mx-2"
+                       href="{% url 'listar_lotes' %}">
+                        Gerenciar lotes
+                    </a>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6 border border-pharmacy-gray mb-8" id="filters-section">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Filtros de Busca</h3>
+            <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="md:col-span-1" id="search-field">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Buscar Produto</label>
+                    <div class="relative">
+                        <input class="w-full pl-10 pr-4 py-3 border border-pharmacy-gray rounded-lg focus:ring-2 focus:ring-pharmacy-green focus:border-transparent"
+                               placeholder="Nome ou código de barras..."
+                               type="text" value="{{ search }}" name="search">
+                        <i class="absolute left-3 top-4 text-gray-400" data-fa-i2svg="">
+                            <svg aria-hidden="true" class="svg-inline--fa fa-magnifying-glass" data-fa-i2svg=""
+                                 data-icon="magnifying-glass" data-prefix="fas" focusable="false"
+                                 role="img" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"
+                                      fill="currentColor"></path>
+                            </svg>
+                        </i>
+                    </div>
+                </div>
+
+                <div id="category-filter">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
+                    <select class="w-full px-4 py-3 border border-pharmacy-gray rounded-lg focus:ring-2 focus:ring-pharmacy-green focus:border-transparent"
+                            name="categoria">
+                        <option value="Todas" {% if categoria == "Todas" %}selected{% endif %}>Todas</option>
+                        {% for cat in categorias %}
+                            <option value="{{ cat }}" {% if categoria == cat %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div id="status-filter">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status do Estoque</label>
+                    <select class="w-full px-4 py-3 border border-pharmacy-gray rounded-lg focus:ring-2 focus:ring-pharmacy-green focus:border-transparent"
+                            name="status">
+                        <option value="Todos" {% if status == "Todos" %}selected{% endif %}>Todos</option>
+                        <option value="ok" {% if status == "ok" %}selected{% endif %}>OK - Estoque Normal</option>
+                        <option value="baixo" {% if status == "baixo" %}selected{% endif %}>Baixo - Atenção</option>
+                        <option value="esgotado" {% if status == "esgotado" %}selected{% endif %}>Esgotado</option>
+                    </select>
+                </div>
+
+                <div class="lg:col-span-5 flex space-x-2 mt-2">
+                    <button type="submit" class="px-6 py-3 bg-green-600 text-white rounded-lg">
+                        <i class="mr-2" data-fa-i2svg="">
+                            <svg class="svg-inline--fa fa-filter" aria-hidden="true" focusable="false" data-prefix="fas"
+                                 data-icon="filter" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"
+                                 data-fa-i2svg="">
+                                <path fill="currentColor"
+                                      d="M3.9 54.9C10.5 40.9 24.5 32 40 32H472c15.5 0 29.5 8.9 36.1 22.9s4.6 30.5-5.2 42.5L320 320.9V448c0 12.1-6.8 23.2-17.7 28.6s-23.8 4.3-33.5-3l-64-48c-8.1-6-12.8-15.5-12.8-25.6V320.9L9 97.3C-.7 85.4-2.8 68.8 3.9 54.9z"></path>
+                            </svg>
+                        </i>
+                        Filtrar
+                    </button>
+                    <a href="{% url 'productos_list' %}"
+                       class="px-6 py-3 border rounded-lg text-gray-700 hover:bg-gray-100">
+                        <i class="mr-2" data-fa-i2svg="">
+                            <svg class="svg-inline--fa fa-arrows-rotate" aria-hidden="true" focusable="false"
+                                 data-prefix="fas" data-icon="arrows-rotate" role="img"
+                                 xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" data-fa-i2svg="">
+                                <path fill="currentColor"
+                                      d="M105.1 202.6c7.7-21.8 20.2-42.3 37.8-59.8c62.5-62.5 163.8-62.5 226.3 0L386.3 160H336c-17.7 0-32 14.3-32 32s14.3 32 32 32H463.5c0 0 0 0 0 0h.4c17.7 0 32-14.3 32-32V64c0-17.7-14.3-32-32-32s-32 14.3-32 32v51.2L414.4 97.6c-87.5-87.5-229.3-87.5-316.8 0C73.2 122 55.6 150.7 44.8 181.4c-5.9 16.7 2.9 34.9 19.5 40.8s34.9-2.9 40.8-19.5zM39 289.3c-5 1.5-9.8 4.2-13.7 8.2c-4 4-6.7 8.8-8.1 14c-.3 1.2-.6 2.5-.8 3.8c-.3 1.7-.4 3.4-.4 5.1V448c0 17.7 14.3 32 32 32s32-14.3 32-32V396.9l17.6 17.5 0 0c87.5 87.4 229.3 87.4 316.7 0c24.4-24.4 42.1-53.1 52.9-83.7c5.9-16.7-2.9-34.9-19.5-40.8s-34.9 2.9-40.8 19.5c-7.7 21.8-20.2 42.3-37.8 59.8c-62.5 62.5-163.8 62.5-226.3 0l-.1-.1L125.6 352H176c17.7 0 32-14.3 32-32s-14.3-32-32-32H48.4c-1.6 0-3.2 .1-4.8 .3s-3.1 .5-4.6 1z"></path>
+                            </svg>
+                        </i>
+                        Limpar
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-pharmacy-gray overflow-hidden" id="stock-table">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-pharmacy-gray">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Nome do Produto
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Código de Barras
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Categoria
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Preço de Venda
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Quantidade Atual
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Validade Mais Próxima
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Status de Estoque
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Ações
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-pharmacy-gray">
+                    {% for producto in productos %}
+                        <tr class="hover:bg-gray-50 transition-colors">
+
+                            <!-- Nome + Categoria -->
+                            <td class="px-6 py-4">
+                                <div class="text-sm font-semibold text-gray-900">{{ producto.nome }}</div>
+                                <div class="text-sm text-gray-500">{{ producto.categoria.nome }}</div>
+                            </td>
+
+                            <!-- Código de Barras -->
+                            <td class="px-6 py-4 font-mono text-sm text-gray-700">
+                                {{ producto.codigo_barras }}
+                            </td>
+
+                            <!-- Tipo de Categoria -->
+                            <td class="px-6 py-4">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    {{ producto.categoria.tipo }}
+                </span>
+                            </td>
+
+                            <!-- Preço -->
+                            <td class="px-6 py-4 text-sm font-semibold text-gray-900">
+                                {{ producto.preco_venda }} MT
+                            </td>
+
+                            <!-- Estoque total -->
+                            <td class="px-6 py-4 text-sm text-gray-900">
+                                {{ producto.estoque_total }} unidades
+                            </td>
+
+                            <!-- Validade mais próxima -->
+                            <td class="px-6 py-4 text-sm text-gray-900">
+                                {% if producto.validade_mais_proxima %}
+                                    {{ producto.validade_mais_proxima|date:"d/m/Y" }}
+                                {% else %}
+                                    <span class="text-gray-400 italic">Sem validade</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Status de Estoque -->
+                            <td class="px-6 py-4">
+                                {% if producto.status_estoque == "esgotado" %}
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        ❌ Esgotado
+                    </span>
+                                {% elif producto.status_estoque == "baixo" %}
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        ⚠️ Baixo Estoque
+                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        ✅ OK
+                    </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Ações -->
+                            <td class="px-6 py-4 text-center">
+                                <div class="flex justify-center space-x-2">
+                                    <a href="{% url 'editar_producto' producto.id %}"
+                                       class="text-blue-500 hover:text-blue-700">
+                                        <i data-fa-i2svg="">
+                                            <svg aria-hidden="true" class="svg-inline--fa fa-pen-to-square"
+                                                 data-fa-i2svg="" data-icon="pen-to-square" data-prefix="fas"
+                                                 focusable="false"
+                                                 role="img" viewBox="0 0 512 512"
+                                                 xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L362.3 51.7l97.9 97.9 30.1-30.1c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L437.7 172.3 339.7 74.3 172.4 241.7zM96 64C43 64 0 107 0 160V416c0 53 43 96 96 96H352c53 0 96-43 96-96V320c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7-14.3 32-32 32H96c-17.7 0-32-14.3-32-32V160c0-17.7 14.3-32 32-32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H96z"
+                                                      fill="currentColor"></path>
+                                            </svg>
+                                        </i>
+                                    </a>
+                                    <a href="{% url 'remover_producto' producto.id %}"
+                                       onclick="return confirm('Tem certeza que deseja remover {{ producto.nome }}?');"
+                                       class="text-red-500 hover:text-red-700">
+                                        <i data-fa-i2svg="">
+                                            <svg aria-hidden="true" class="svg-inline--fa fa-trash"
+                                                 data-icon="trash" data-prefix="fas" viewBox="0 0 448 512"
+                                                 xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0
+                     32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8
+                     296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416
+                     128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3
+                     0 46.3-19.7 47.9-45L416 128z"
+                                                      fill="currentColor"></path>
+                                            </svg>
+                                        </i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">Nenhum Producto encontrado.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+
+                </table>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-center mt-6" id="pagination">
+            <div class="text-sm text-gray-700">
+                Mostrando
+                <span class="font-medium">{{ page_obj.start_index }}</span>
+                a
+                <span class="font-medium">{{ page_obj.end_index }}</span>
+                de
+                <span class="font-medium">{{ page_obj.paginator.count }}</span> productos
+            </div>
+
+            <!-- Botões -->
+            <div class="flex space-x-1">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}"
+                       class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Anterior</a>
+                {% else %}
+                    <span class="px-3 py-1 bg-gray-100 text-gray-400 rounded">Anterior</span>
+                {% endif %}
+
+                <!-- Números -->
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <span class="px-3 py-1 bg-green-600 text-white rounded">{{ num }}</span>
+                    {% else %}
+                        <a href="?page={{ num }}"
+                           class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}"
+                       class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Próxima</a>
+                {% else %}
+                    <span class="px-3 py-1 bg-gray-100 text-gray-400 rounded">Próxima</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+
+{% endblock %}

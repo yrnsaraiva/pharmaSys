@@ -1,0 +1,78 @@
+{% extends "main.html" %}
+{% block content %}
+
+    {% include 'navbar.html' %}
+
+    <div class="flex-1 ml-64 p-8" id="main-content">
+            <div class="mb-8" id="page-header">
+                <div class="flex items-center mb-4">
+                    <a href="{% url 'categorias_list' %}"
+                            class="text-gray-500 hover:text-gray-700 mr-4 transition-colors">
+                        <i class="text-lg">
+                            <svg aria-hidden="true" class="w-5 h-5" viewBox="0 0 448 512">
+                                <path d="M9.4 233.4c-12.5 12.5-12.5 32.8
+                            0 45.3l160 160c12.5 12.5 32.8 12.5
+                            45.3 0s12.5-32.8 0-45.3L109.2
+                            288H416c17.7 0 32-14.3
+                            32-32s-14.3-32-32-32H109.2l105.5-105.4c12.5-12.5
+                            12.5-32.8 0-45.3s-32.8-12.5-45.3
+                            0l-160 160z" fill="currentColor"/>
+                            </svg>
+                        </i>
+                    </a>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900 mb-2">Nova Categoria</h2>
+                        <p class="text-gray-600">Cadastre uma nova categoria no sistema</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-pharmacy-gray p-8 w-[500px] mx-auto">
+                <form method="POST" class="space-y-4">
+                    {% csrf_token %}
+
+                    <!-- Nome -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Nome</label>
+                        <input type="text" name="nome" required
+                               class="w-full mt-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                    </div>
+
+                    <!-- Tipo -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Tipo</label>
+                        <select name="tipo" required
+                                class="w-full mt-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                            <option value="medicamento">Medicamento</option>
+                            <option value="higiene">Higiene</option>
+                            <option value="perfumaria">Perfumaria</option>
+                            <option value="suplemento">Suplemento</option>
+                            <option value="conveniencia">Convêniencia</option>
+                        </select>
+                    </div>
+
+                    <!-- Descrição -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Descrição</label>
+                        <textarea name="descricao" rows="3"
+                                  class="w-full mt-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"></textarea>
+                    </div>
+
+                    <!-- Botões -->
+                    <div class="flex justify-end space-x-2">
+                        <a href="{% url 'categorias_list' %}"
+                           class="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100">
+                            Cancelar
+                        </a>
+                        <button type="submit"
+                                class="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700">
+                            Salvar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+
+{% endblock %}

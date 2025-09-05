@@ -1,0 +1,141 @@
+{% extends 'main.html' %}
+
+{% block content %}
+
+    {% include 'navbar.html' %}
+
+    <div class="flex-1 ml-64 p-8" id="main-content">
+        <div class="flex justify-between items-center mb-8" id="page-header">
+            <div>
+                <h2 class="text-xl font-bold text-gray-900 mb-2">Gestão de Lotes</h2>
+                <p class="text-gray-600">Gerencie os lotes de medicamentos e produtos</p>
+            </div>
+            <a class="bg-pharmacy-green hover:bg-pharmacy-green-dark text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm"
+               href="{% url 'cadastrar_lote' %}">
+                <i class="mr-2">
+                    <svg aria-hidden="true" class="svg-inline--fa fa-plus" viewBox="0 0 448 512"
+                         xmlns="http://www.w3.org/2000/svg">
+                        <path d="M256 80c0-17.7-14.3-32-32-32s-32
+                        14.3-32 32V224H48c-17.7 0-32
+                        14.3-32 32s14.3 32 32
+                        32H192V432c0 17.7 14.3
+                        32 32 32s32-14.3
+                        32-32V288H400c17.7 0
+                        32-14.3 32-32s-14.3-32-32-32H256V80z"
+                              fill="currentColor"></path>
+                    </svg>
+                </i>
+                Adicionar Lote
+            </a>
+        </div>
+
+        <!-- Filtro -->
+        <div class="bg-white rounded-lg shadow-sm border border-pharmacy-gray p-6 mb-6">
+            <form method="get" class="flex items-center gap-4">
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Buscar por produto</label>
+                    <input type="text" name="search" value="{{ request.GET.search }}"
+                           placeholder="Digite o nome do produto..."
+                           class="w-full pl-4 pr-4 py-2 border border-pharmacy-gray rounded-lg focus:ring-2 focus:ring-pharmacy-green focus:border-transparent">
+                </div>
+                <button type="submit"
+                        class="bg-pharmacy-green hover:bg-pharmacy-green-dark text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm">
+                    Pesquisar
+                </button>
+            </form>
+        </div>
+
+        <!-- Tabela de Lotes -->
+        <div class="bg-white rounded-lg shadow-sm border border-pharmacy-gray overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-pharmacy-gray-light">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Produto</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Número do Lote</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Quantidade</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Validade</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Fabricação</th>
+                        <th class="px-6 py-4 text-center text-sm font-semibold text-gray-900">Ações</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-pharmacy-gray">
+                    {% for lote in page_obj %}
+                        <tr class="hover:bg-pharmacy-gray-light/50 transition-colors">
+                            <td class="px-6 py-4 font-medium text-gray-900">{{ lote.produto.nome }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-700">{{ lote.numero_lote }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-700">{{ lote.quantidade_disponivel }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-700">{{ lote.data_validade|date:"d/m/Y"|default:"—" }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-700">{{ lote.data_fabricacao|date:"d/m/Y"|default:"—" }}</td>
+                            <td class="px-6 py-4 text-center">
+                                <div class="flex justify-center space-x-2">
+                                    <a href="{% url 'remover_lote' lote.id %}"
+                                       onclick="return confirm('Tem certeza que deseja remover {{ lote.produto }} - {{ lote.numero_lote }}?');"
+                                       class="text-red-500 hover:text-red-700">
+                                        <i data-fa-i2svg="">
+                                            <svg aria-hidden="true" class="svg-inline--fa fa-trash"
+                                                 data-icon="trash" data-prefix="fas" viewBox="0 0 448 512"
+                                                 xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0
+                     32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8
+                     296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416
+                     128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3
+                     0 46.3-19.7 47.9-45L416 128z"
+                                                      fill="currentColor"></path>
+                                            </svg>
+                                        </i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                                Nenhum lote encontrado.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Paginação -->
+        <div class="flex justify-between items-center mt-6">
+            <div class="text-sm text-gray-700">
+                Mostrando
+                <span class="font-medium">{{ page_obj.start_index }}</span>
+                a
+                <span class="font-medium">{{ page_obj.end_index }}</span>
+                de
+                <span class="font-medium">{{ page_obj.paginator.count }}</span> lotes
+            </div>
+
+            <div class="flex space-x-1">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}"
+                       class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Anterior</a>
+                {% else %}
+                    <span class="px-3 py-1 bg-gray-100 text-gray-400 rounded">Anterior</span>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <span class="px-3 py-1 bg-green-600 text-white rounded">{{ num }}</span>
+                    {% else %}
+                        <a href="?page={{ num }}"
+                           class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}"
+                       class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Próxima</a>
+                {% else %}
+                    <span class="px-3 py-1 bg-gray-100 text-gray-400 rounded">Próxima</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

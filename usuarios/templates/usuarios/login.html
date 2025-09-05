@@ -1,0 +1,119 @@
+{% extends 'main.html' %}
+{% block content %}
+
+    <div class="flex items-center justify-center min-h-screen p-4" id="login-container">
+        <div class="w-full max-w-md bg-white rounded-2xl shadow-lg overflow-hidden" id="login-card">
+            <div class="bg-pharmacy-green-light/10 p-6 flex flex-col items-center" id="login-header">
+                <div class="mb-4 flex items-center justify-center" id="logo">
+                    <div class="bg-white p-3 rounded-full shadow-md">
+                        <i class="text-pharmacy-green-dark text-4xl" data-fa-i2svg="">
+                            <svg aria-hidden="true" class="svg-inline--fa fa-mortar-pestle" data-fa-i2svg=""
+                                 data-icon="mortar-pestle" data-prefix="fas" focusable="false" role="img"
+                                 viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M504.3 11.1C493.3-1.6 474.5-3.7 461 6.2L252.3 160H397.3L502.6 54.6c11.8-11.8 12.6-30.8 1.6-43.5zM32 192c-17.7 0-32 14.3-32 32s14.3 32 32 32c0 82.5 43.4 147.7 123.9 176.2c-11.1 13.9-19.4 30.3-23.9 48.1C127.6 497.4 142.3 512 160 512H352c17.7 0 32.4-14.6 28.1-31.7c-4.5-17.8-12.8-34.1-23.9-48.1C436.6 403.7 480 338.5 480 256c17.7 0 32-14.3 32-32s-14.3-32-32-32H32z"
+                                      fill="currentColor"></path>
+                            </svg>
+                        </i>
+                    </div>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800">PharmaSys</h1>
+                <p class="text-sm text-gray-600 mt-1">Sistema de Gestão de Farmácia</p>
+            </div>
+
+            <div class="p-8" id="login-form-container">
+                <h2 class="text-xl font-semibold text-gray-800 mb-6 text-center">Acesso ao Sistema</h2>
+
+                <form id="login-form" method="post">
+                    {% csrf_token %}
+                    <div class="space-y-5">
+                        <div class="relative" id="username-field">
+                            <label class="block text-sm font-medium text-gray-700 mb-1" for="username">Nome de
+                                usuário</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="text-gray-400" data-fa-i2svg="">
+                                        <svg aria-hidden="true" class="svg-inline--fa fa-user" data-fa-i2svg=""
+                                             data-icon="user" data-prefix="fas" focusable="false"
+                                             role="img" viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z"
+                                                  fill="currentColor"></path>
+                                        </svg>
+                                    </i>
+                                </div>
+                                <input class="block w-full pl-10 pr-3 py-3 border border-pharmacy-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-pharmacy-green focus:border-pharmacy-green transition-all text-gray-800"
+                                       id="username" name="username"
+                                       placeholder="Digite seu nome de usuário"
+                                       required="" type="text">
+                            </div>
+                        </div>
+
+                        <div class="relative" id="password-field">
+                            <label class="block text-sm font-medium text-gray-700 mb-1" for="password">Senha</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="text-gray-400" data-fa-i2svg="">
+                                        <svg aria-hidden="true" class="svg-inline--fa fa-lock" data-fa-i2svg=""
+                                             data-icon="lock" data-prefix="fas" focusable="false"
+                                             role="img" viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M144 144v48H304V144c0-44.2-35.8-80-80-80s-80 35.8-80 80zM80 192V144C80 64.5 144.5 0 224 0s144 64.5 144 144v48h16c35.3 0 64 28.7 64 64V448c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V256c0-35.3 28.7-64 64-64H80z"
+                                                  fill="currentColor"></path>
+                                        </svg>
+                                    </i>
+                                </div>
+                                <input class="block w-full pl-10 pr-3 py-3 border border-pharmacy-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-pharmacy-green focus:border-pharmacy-green transition-all text-gray-800"
+                                       id="password" name="password"
+                                       placeholder="Digite sua senha"
+                                       required="" type="password">
+                            </div>
+                        </div>
+
+                        <div class="pt-2" id="login-button">
+                            <button class="w-full bg-pharmacy-green hover:bg-pharmacy-green-dark text-white font-medium py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center"
+                                    type="submit">
+                                <i class="mr-2" data-fa-i2svg="">
+                                    <svg aria-hidden="true" class="svg-inline--fa fa-right-to-bracket" data-fa-i2svg=""
+                                         data-icon="right-to-bracket" data-prefix="fas" focusable="false"
+                                         role="img" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M217.9 105.9L340.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L217.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1L32 320c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM352 416l64 0c17.7 0 32-14.3 32-32l0-256c0-17.7-14.3-32-32-32l-64 0c-17.7 0-32-14.3-32-32s14.3-32 32-32l64 0c53 0 96 43 96 96l0 256c0 53-43 96-96 96l-64 0c-17.7 0-32-14.3-32-32s14.3-32 32-32z"
+                                              fill="currentColor"></path>
+                                    </svg>
+                                </i>
+                                Entrar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="px-8 pb-6 text-center" id="login-footer">
+                <div class="pt-4 border-t border-pharmacy-gray text-xs text-gray-500">
+                    <p>© 2025 PharmaSys. Todos os direitos reservados.</p>
+                    <div class="flex justify-center space-x-4 mt-3">
+                        {% if is_secure %}
+                            <i style="color:green;" data-fa-i2svg="">
+                            <svg aria-hidden="true" class="svg-inline--fa fa-shield-halved" data-fa-i2svg=""
+                                 data-icon="shield-halved" data-prefix="fas" focusable="false" role="img"
+                                 viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M256 0c4.6 0 9.2 1 13.4 2.9L457.7 82.8c22 9.3 38.4 31 38.3 57.2c-.5 99.2-41.3 280.7-213.6 363.2c-16.7 8-36.1 8-52.8 0C57.3 420.7 16.5 239.2 16 140c-.1-26.2 16.3-47.9 38.3-57.2L242.7 2.9C246.8 1 251.4 0 256 0zm0 66.8V444.8C394 378 431.1 230.1 432 141.4L256 66.8l0 0z"
+                                      fill="currentColor"></path>
+                            </svg>
+                        </i>
+                            <span style="color:green;">Conexão segura (HTTPS)</span>
+                        {% else %}
+                            <i style="color:red;" data-fa-i2svg="">
+                            <svg aria-hidden="true" class="svg-inline--fa fa-shield-halved" data-fa-i2svg=""
+                                 data-icon="shield-halved" data-prefix="fas" focusable="false" role="img"
+                                 viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M256 0c4.6 0 9.2 1 13.4 2.9L457.7 82.8c22 9.3 38.4 31 38.3 57.2c-.5 99.2-41.3 280.7-213.6 363.2c-16.7 8-36.1 8-52.8 0C57.3 420.7 16.5 239.2 16 140c-.1-26.2 16.3-47.9 38.3-57.2L242.7 2.9C246.8 1 251.4 0 256 0zm0 66.8V444.8C394 378 431.1 230.1 432 141.4L256 66.8l0 0z"
+                                      fill="currentColor"></path>
+                            </svg>
+                        </i>
+                            <span style="color:red;">Conexão não segura (HTTP)</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

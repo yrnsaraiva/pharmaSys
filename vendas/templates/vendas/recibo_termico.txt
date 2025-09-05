@@ -1,0 +1,33 @@
+{% load custom_filters %}
+FARMACIA, LDA
+401426310
+{{ pedido.lavandaria.endereco }}
+Cel.: +258 812345678
+
+Cli.: {{ venda.cliente.nome }}
+      {{ venda.cliente.telefone }}
+
+VD          N.{{venda.id}}
+
+Data: {{ venda.data_venda|date:"d/m/Y H:i" }}
+
+Total:              {{ venda.total }}
+
+MP: {{ venda.get_forma_pagamento_display }}
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Descricao       quant.       Total
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+{% for item in venda.itens.all %}
+{{ item.produto.nome|ljust:20 }} {{ item.quantidade|stringformat:"3d" }}   {{ item.subtotal|stringformat:".2f" }}
+{% endfor %}
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Total:                                                               {{ venda.total }}
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+               IVA INCLUSO
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Vendedor: {{ venda.atendente }}
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

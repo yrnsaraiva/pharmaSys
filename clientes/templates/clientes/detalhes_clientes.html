@@ -1,0 +1,93 @@
+{% extends 'main.html' %}
+
+{% block content %}
+{% include 'navbar.html' %}
+
+<div class="flex-1 ml-64 p-8">
+
+    <!-- Cabeçalho -->
+    <div class="mb-6">
+        <h2 class="text-2xl font-bold text-gray-900">{{ cliente.nome }}</h2>
+        <p class="text-gray-600">Detalhes do cliente</p>
+    </div>
+
+    <!-- Info principal -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white shadow rounded-lg p-6">
+            <p class="text-sm text-gray-500">Contacto</p>
+            <p class="text-lg font-semibold">{{ cliente.telefone }}</p>
+        </div>
+        <div class="bg-white shadow rounded-lg p-6">
+            <p class="text-sm text-gray-500">Email</p>
+            <p class="text-lg font-semibold">{{ cliente.email }}</p>
+        </div>
+        <div class="bg-white shadow rounded-lg p-6">
+            <p class="text-sm text-gray-500">Data de Cadastro</p>
+            <p class="text-lg font-semibold">{{ cliente.data_cadastro|date:"d/m/Y H:i" }}</p>
+        </div>
+    </div>
+
+    <!-- Estatísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-green-100 p-6 rounded-lg">
+            <p class="text-sm text-gray-700">Total de Compras</p>
+            <p class="text-2xl font-bold text-green-700">{{ total_compras }}</p>
+        </div>
+        <div class="bg-blue-100 p-6 rounded-lg">
+            <p class="text-sm text-gray-700">Total Gasto</p>
+            <p class="text-2xl font-bold text-blue-700">{{ total_gasto }} MT</p>
+        </div>
+        <div class="bg-yellow-100 p-6 rounded-lg">
+            <p class="text-sm text-gray-700">Última Compra</p>
+            {% if ultima_compra %}
+                <p class="text-lg font-semibold text-yellow-700">{{ ultima_compra.data_venda|date:"d/m/Y H:i" }}</p>
+            {% else %}
+                <p class="text-lg font-semibold text-gray-500">Nenhuma compra</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Produtos mais comprados -->
+    <div class="bg-white rounded-lg shadow p-6 mb-8">
+        <h3 class="text-lg font-semibold mb-4">Produtos mais comprados</h3>
+        <ul class="space-y-2">
+            {% for p in produtos_populares %}
+                <li class="flex justify-between">
+                    <span>{{ p.produto__nome }}</span>
+                    <span class="font-medium">{{ p.qtd }}</span>
+                </li>
+            {% empty %}
+                <li class="text-gray-500">Nenhum produto comprado</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Últimas compras -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Últimas Compras</h3>
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b">
+                    <th class="text-left py-2">Compra</th>
+                    <th class="text-left py-2">Data</th>
+                    <th class="text-left py-2">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for venda in vendas %}
+                <tr class="border-b">
+                    <td class="py-2">#{{ venda.id }}</td>
+                    <td class="py-2">{{ venda.data_venda|date:"d/m/Y H:i" }}</td>
+                    <td class="py-2">{{ venda.total }} MT</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="2" class="text-center text-gray-500 py-2">Nenhuma compra</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock %}

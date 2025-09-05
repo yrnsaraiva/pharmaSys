@@ -1,0 +1,146 @@
+<div class="bg-white shadow-sm border-b border-pharmacy-gray fixed w-full z-40" id="header">
+    <div class="flex justify-between items-center h-16 px-6">
+        <div class="flex items-center" id="nav-logo">
+            <div class="bg-pharmacy-green-light/10 p-2 rounded-lg mr-3">
+                <i class="text-pharmacy-green-dark text-xl" data-fa-i2svg="">
+                    <svg aria-hidden="true" class="svg-inline--fa fa-mortar-pestle" data-fa-i2svg=""
+                         data-icon="mortar-pestle"
+                         data-prefix="fas" focusable="false" role="img" viewBox="0 0 512 512"
+                         xmlns="http://www.w3.org/2000/svg">
+                        <path d="M504.3 11.1C493.3-1.6 474.5-3.7 461 6.2L252.3 160H397.3L502.6 54.6c11.8-11.8 12.6-30.8 1.6-43.5zM32 192c-17.7 0-32 14.3-32 32s14.3 32 32 32c0 82.5 43.4 147.7 123.9 176.2c-11.1 13.9-19.4 30.3-23.9 48.1C127.6 497.4 142.3 512 160 512H352c17.7 0 32.4-14.6 28.1-31.7c-4.5-17.8-12.8-34.1-23.9-48.1C436.6 403.7 480 338.5 480 256c17.7 0 32-14.3 32-32s-14.3-32-32-32H32z"
+                              fill="currentColor"></path>
+                    </svg>
+                </i>
+            </div>
+            <div class="ml-3">
+                <h1 class="text-lg font-bold text-gray-800">PharmaSys</h1>
+                <p class="text-xs text-gray-500">Gestão de Farmácia</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-4" id="nav-user">
+            <div class="flex items-center space-x-2">
+                <img class="w-8 h-8 rounded-full"
+                     src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-1.jpg">
+                <div class="text-right">
+                    <p class="text-sm font-medium text-gray-800">{{ request.user.username }}</p>
+                    <p class="text-xs text-gray-500">
+                        {% if request.user.is_superuser %}
+                            Superusuário
+                        {% elif request.user.is_staff %}
+                            Staff
+                        {% elif request.user.is_active %}
+                            Usuário activo
+                        {% else %}
+                            Inactivo
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit"
+                        class="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+                    <i class="mr-1" data-fa-i2svg="">
+                        <svg aria-hidden="true" class="svg-inline--fa fa-right-from-bracket" data-fa-i2svg=""
+                             data-icon="right-from-bracket" data-prefix="fas" focusable="false" role="img"
+                             viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z"
+                                  fill="currentColor"></path>
+                        </svg>
+                    </i>
+                    Sair
+                </button>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<div class="flex pt-16">
+    <div class="w-64 bg-white shadow-sm border-r border-pharmacy-gray fixed h-full" id="sidebar">
+        <nav class="mt-8 px-4">
+            <div class="space-y-2">
+                <a class="flex items-center px-4 py-3 text-gray-600 hover:bg-pharmacy-green-light/10 hover:text-pharmacy-green-dark rounded-lg transition-colors cursor-pointer"
+                   href="{% url 'dashboard' %}">
+                    <i class="mr-3 w-5" data-fa-i2svg="">
+                        <svg aria-hidden="true"
+                             class="svg-inline--fa fa-chart-line" data-fa-i2svg=""
+                             data-icon="chart-line"
+                             data-prefix="fas" focusable="false"
+                             role="img"
+                             viewBox="0 0 512 512"
+                             xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                    d="M64 64c0-17.7-14.3-32-32-32S0 46.3 0 64V400c0 44.2 35.8 80 80 80H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H80c-8.8 0-16-7.2-16-16V64zm406.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L320 210.7l-57.4-57.4c-12.5-12.5-32.8-12.5-45.3 0l-112 112c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L240 221.3l57.4 57.4c12.5 12.5 32.8 12.5 45.3 0l128-128z"
+                                    fill="currentColor"></path>
+                        </svg>
+                    </i>
+                    Dashboard
+                </a>
+                <a class="flex items-center px-4 py-3 text-gray-600 hover:bg-pharmacy-green-light/10 hover:text-pharmacy-green-dark rounded-lg transition-colors cursor-pointer"
+                   href="{% url 'productos_list' %}">
+                    <i class="mr-3 w-5" data-fa-i2svg="">
+                        <svg aria-hidden="true" class="svg-inline--fa fa-pills"
+                             data-fa-i2svg="" data-icon="pills" data-prefix="fas"
+                             focusable="false" role="img"
+                             viewBox="0 0 576 512"
+                             xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                    d="M112 96c-26.5 0-48 21.5-48 48V256h96V144c0-26.5-21.5-48-48-48zM0 144C0 82.1 50.1 32 112 32s112 50.1 112 112V368c0 61.9-50.1 112-112 112S0 429.9 0 368V144zM554.9 399.4c-7.1 12.3-23.7 13.1-33.8 3.1L333.5 214.9c-10-10-9.3-26.7 3.1-33.8C360 167.7 387.1 160 416 160c88.4 0 160 71.6 160 160c0 28.9-7.7 56-21.1 79.4zm-59.5 59.5C472 472.3 444.9 480 416 480c-88.4 0-160-71.6-160-160c0-28.9 7.7-56 21.1-79.4c7.1-12.3 23.7-13.1 33.8-3.1L498.5 425.1c10 10 9.3 26.7-3.1 33.8z"
+                                    fill="currentColor"></path>
+                        </svg>
+                    </i>
+                    Produtos
+                </a>
+                <a class="flex items-center px-4 py-3 text-gray-600 hover:bg-pharmacy-green-light/10 hover:text-pharmacy-green-dark rounded-lg transition-colors cursor-pointer"
+                   href="{% url 'listar_fornecedores' %}">
+                    <i class="mr-3 w-5" data-fa-i2svg="">
+                        <svg aria-hidden="true" class="svg-inline--fa fa-truck"
+                             data-fa-i2svg="" data-icon="truck" data-prefix="fas"
+                             focusable="false" role="img"
+                             viewBox="0 0 640 512" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                    d="M48 0C21.5 0 0 21.5 0 48V368c0 26.5 21.5 48 48 48H64c0 53 43 96 96 96s96-43 96-96H384c0 53 43 96 96 96s96-43 96-96h32c17.7 0 32-14.3 32-32s-14.3-32-32-32V288 256 237.3c0-17-6.7-33.3-18.7-45.3L512 114.7c-12-12-28.3-18.7-45.3-18.7H416V48c0-26.5-21.5-48-48-48H48zM416 160h50.7L544 237.3V256H416V160zM112 416a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zm368-48a48 48 0 1 1 0 96 48 48 0 1 1 0-96z"
+                                    fill="currentColor"></path>
+                        </svg>
+                    </i>
+                    Fornecedores
+                </a>
+                <a href="{% url 'listar_vendas' %}"
+                   class="flex items-center px-4 py-3 text-gray-600 hover:bg-pharmacy-green-light/10 hover:text-pharmacy-green-dark rounded-lg transition-colors cursor-pointer">
+                    <i class="mr-3 w-5" data-fa-i2svg="">
+                        <svg aria-hidden="true"
+                             class="svg-inline--fa fa-cash-register"
+                             data-fa-i2svg="" data-icon="cash-register"
+                             data-prefix="fas" focusable="false"
+                             role="img"
+                             viewBox="0 0 512 512"
+                             xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                    d="M64 0C46.3 0 32 14.3 32 32V96c0 17.7 14.3 32 32 32h80v32H87c-31.6 0-58.5 23.1-63.3 54.4L1.1 364.1C.4 368.8 0 373.6 0 378.4V448c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V378.4c0-4.8-.4-9.6-1.1-14.4L488.2 214.4C483.5 183.1 456.6 160 425 160H208V128h80c17.7 0 32-14.3 32-32V32c0-17.7-14.3-32-32-32H64zM96 48H256c8.8 0 16 7.2 16 16s-7.2 16-16 16H96c-8.8 0-16-7.2-16-16s7.2-16 16-16zM64 432c0-8.8 7.2-16 16-16H432c8.8 0 16 7.2 16 16s-7.2 16-16 16H80c-8.8 0-16-7.2-16-16zm48-168a24 24 0 1 1 0-48 24 24 0 1 1 0 48zm120-24a24 24 0 1 1 -48 0 24 24 0 1 1 48 0zM160 344a24 24 0 1 1 0-48 24 24 0 1 1 0 48zM328 240a24 24 0 1 1 -48 0 24 24 0 1 1 48 0zM256 344a24 24 0 1 1 0-48 24 24 0 1 1 0 48zM424 240a24 24 0 1 1 -48 0 24 24 0 1 1 48 0zM352 344a24 24 0 1 1 0-48 24 24 0 1 1 0 48z"
+                                    fill="currentColor"></path>
+                        </svg>
+                    </i>
+                    Vendas
+                </a>
+                <a class="flex items-center px-4 py-3 text-gray-600 hover:bg-pharmacy-green-light/10 hover:text-pharmacy-green-dark rounded-lg transition-colors cursor-pointer"
+                   href="{% url 'listar_cliente' %}">
+                    <i class="mr-3 w-5" data-fa-i2svg="">
+                        <svg aria-hidden="true" class="svg-inline--fa fa-users"
+                             data-fa-i2svg="" data-icon="users" data-prefix="fas"
+                             focusable="false" role="img"
+                             viewBox="0 0 640 512"
+                             xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                    d="M144 0a80 80 0 1 1 0 160A80 80 0 1 1 144 0zM512 0a80 80 0 1 1 0 160A80 80 0 1 1 512 0zM0 298.7C0 239.8 47.8 192 106.7 192h42.7c15.9 0 31 3.5 44.6 9.7c-1.3 7.2-1.9 14.7-1.9 22.3c0 38.2 16.8 72.5 43.3 96c-.2 0-.4 0-.7 0H21.3C9.6 320 0 310.4 0 298.7zM405.3 320c-.2 0-.4 0-.7 0c26.6-23.5 43.3-57.8 43.3-96c0-7.6-.7-15-1.9-22.3c13.6-6.3 28.7-9.7 44.6-9.7h42.7C592.2 192 640 239.8 640 298.7c0 11.8-9.6 21.3-21.3 21.3H405.3zM224 224a96 96 0 1 1 192 0 96 96 0 1 1 -192 0zM128 485.3C128 411.7 187.7 352 261.3 352H378.7C452.3 352 512 411.7 512 485.3c0 14.7-11.9 26.7-26.7 26.7H154.7c-14.7 0-26.7-11.9-26.7-26.7z"
+                                    fill="currentColor"></path>
+                        </svg>
+                    </i>
+                    Clientes
+                </a>
+            </div>
+        </nav>
+    </div>
+
+</div>
