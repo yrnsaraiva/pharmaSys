@@ -28,7 +28,7 @@ class Produto(models.Model):
     nome = models.CharField(max_length=100)
     categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True)
     fornecedor = models.ForeignKey(Fornecedor, on_delete=models.SET_NULL, null=True)
-    codigo_barras = models.CharField(max_length=50, unique=True)
+    codigo_barras = models.CharField(max_length=50, unique=True, null=True, blank=True)
     preco_venda = models.DecimalField(max_digits=10, decimal_places=2)
     preco_compra = models.DecimalField(max_digits=10, decimal_places=2)
     estoque_minimo = models.PositiveIntegerField(default=10)

@@ -101,10 +101,11 @@ def criar_venda(request):
     subtotal = 0
 
     if request.method == 'POST':
-        codigo_barras = request.POST.get('codigo_barras')
-        if codigo_barras:
+        # codigo_barras = request.POST.get('codigo_barras')
+        nome_produto = request.POST.get('nome_produto')
+        if nome_produto:
             try:
-                produto = Produto.objects.get(codigo_barras=codigo_barras)
+                produto = Produto.objects.get(nome=nome_produto)
 
                 # Verificar estoque total considerando lotes válidos
                 estoque_total = produto.estoque_total()
