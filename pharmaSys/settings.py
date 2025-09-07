@@ -90,7 +90,7 @@ DATABASES = {
 POSTGRES_LOCALLY = True
 if not DEBUG or POSTGRES_LOCALLY:
     DATABASES['default'] = dj_database_url.parse(
-        'postgresql://postgres:ltMcJqJuWVxnNANhcmrESUFUBgTBKptC@maglev.proxy.rlwy.net:39349/railway')
+        'postgresql://postgres:aasiGbCkQfTCRDfiMXdyQdNfXGHYynTw@maglev.proxy.rlwy.net:41864/railway')
 
 # ==========================
 # PASSWORD VALIDATION
