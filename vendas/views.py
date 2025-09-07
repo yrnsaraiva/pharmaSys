@@ -96,16 +96,18 @@ def imprimir_recibo_imagem(request, venda_id):
 def criar_venda(request):
     formas_pagamento = Venda.FORMA_PAGAMENTO_CHOICES
     clientes = Cliente.objects.all().order_by('nome')
+    productos = Produto.objects.all().order_by('nome')
     cart = request.session.get('cart', [])
     total = 0
     subtotal = 0
 
     if request.method == 'POST':
         # codigo_barras = request.POST.get('codigo_barras')
-        nome_produto = request.POST.get('nome_produto')
-        if nome_produto:
+        # nome_produto = request.POST.get('nome_produto')
+        produto_id = request.POST.get('produto')  # campo do select2
+        if produto_id:
             try:
-                produto = Produto.objects.get(nome=nome_produto)
+                produto = Produto.objects.get(id=produto_id)
 
                 # Verificar estoque total considerando lotes válidos
                 estoque_total = produto.estoque_total()
@@ -165,6 +167,7 @@ def criar_venda(request):
 
     context = {
         'cart': cart,
+        'produtos': productos,
         'subtotal': subtotal,
         'total': total,
         'formas_pagamento': formas_pagamento,

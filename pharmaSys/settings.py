@@ -87,10 +87,10 @@ DATABASES = {
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
     )
 }
-POSTGRES_LOCALLY = False
-if not DEBUG or POSTGRES_LOCALLY:
-    DATABASES['default'] = dj_database_url.parse(
-        'postgresql://postgres:aasiGbCkQfTCRDfiMXdyQdNfXGHYynTw@maglev.proxy.rlwy.net:41864/railway')
+# POSTGRES_LOCALLY = False
+# if not DEBUG or POSTGRES_LOCALLY:
+#     DATABASES['default'] = dj_database_url.parse(
+#         'postgresql://postgres:aasiGbCkQfTCRDfiMXdyQdNfXGHYynTw@maglev.proxy.rlwy.net:41864/railway')
 
 # ==========================
 # PASSWORD VALIDATION
