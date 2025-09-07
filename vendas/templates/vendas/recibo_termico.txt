@@ -1,8 +1,9 @@
 {% load custom_filters %}
-FARMACIA, LDA
-401426310
-{{ pedido.lavandaria.endereco }}
-Cel.: +258 812345678
+Farmácia JONDE
+401882677
+Av. Samora Machel N.360
+Email.: farmaciajonde@gmail.com
+Cel.: +258 85 324 4412
 
 Cli.: {{ venda.cliente.nome }}
       {{ venda.cliente.telefone }}
