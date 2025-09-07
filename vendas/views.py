@@ -234,12 +234,11 @@ def finalizar_venda(request):
             return redirect('criar_venda')
         except Exception as e:
             messages.error(request, f'Erro ao finalizar venda: {str(e)}')
-            return redirect('criar_venda')
+            return redirect('listar_vendas')
 
     return redirect('criar_venda')
 
 
-@login_required
 def atualizar_estoque_lotes(produto, quantidade_vendida):
     """Atualiza o estoque usando o sistema FIFO (First In, First Out)"""
     # Obter lotes válidos ordenados por validade (mais antigos primeiro)
@@ -281,7 +280,6 @@ def remover_produto(request, produto_id):
     return redirect('criar_venda')
 
 
-@login_required
 def atualizar_quantidade(request, produto_id):
     if request.method == 'POST':
         quantidade = int(request.POST.get('quantidade', 1))

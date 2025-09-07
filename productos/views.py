@@ -230,7 +230,7 @@ def criar_lote(request):
             data_validade=data_validade or None,
             data_fabricacao=data_fabricacao or None,
         )
-        return redirect("lotes_list")  # ajuste para sua URL de listagem
+        return redirect("listar_lotes")  # ajuste para sua URL de listagem
 
     context = {
         "produtos": Produto.objects.all()
