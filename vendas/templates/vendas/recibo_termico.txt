@@ -1,5 +1,5 @@
 {% load custom_filters %}
-Farmácia JONDE
+FARMACIA JONDE
 401882677
 Av. Samora Machel N.360
 Email.: farmaciajonde@gmail.com
@@ -12,22 +12,21 @@ VD          N.{{venda.id}}
 
 Data: {{ venda.data_venda|date:"d/m/Y H:i" }}
 
-Total:              {{ venda.total }}
+Total:              {{ venda.total }}MT
 
 MP: {{ venda.get_forma_pagamento_display }}
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-Descricao       quant.       Total
+Descricao                        quant.                         Total
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 {% for item in venda.itens.all %}
-{{ item.produto.nome|ljust:20 }} {{ item.quantidade|stringformat:"3d" }}   {{ item.subtotal|stringformat:".2f" }}
+{{ item.produto.nome|ljust:20 }} {{ item.quantidade|stringformat:"3d" }}                          {{ item.subtotal|stringformat:".2f" }}
 {% endfor %}
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-Total:                                                               {{ venda.total }}
+Total:                                                               {{ venda.total }}MT
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-               IVA INCLUSO
+                                IVA INCLUSO
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 Vendedor: {{ venda.atendente }}
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

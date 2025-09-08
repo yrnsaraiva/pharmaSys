@@ -230,7 +230,7 @@ def finalizar_venda(request):
             request.session.modified = True
 
             messages.success(request, f'Venda #{venda.id} finalizada com sucesso! Total: {total_venda:.2f} MZN')
-            return redirect('listar_vendas')
+            return redirect('detalhes_venda', venda_id=venda.id)
 
         except Produto.DoesNotExist:
             messages.error(request, 'Erro: Produto não encontrado no sistema.')
@@ -321,7 +321,33 @@ def cancelar_venda(request):
 @login_required
 def remover_venda(request, venda_id):
     venda = get_object_or_404(Venda, pk=venda_id)
+    itens = ItemVenda.objects.filter(venda=venda)
+
+    # Devolver ao estoque
+    for item in itens:
+        produto = item.produto
+        quantidade = item.quantidade
+
+        # Pega os lotes do produto (ordenados por validade inversa, para devolver no mais recente primeiro)
+        lotes = Lote.objects.filter(produto=produto).order_by('-data_validade')
+
+        quantidade_restante = quantidade
+        for lote in lotes:
+            if quantidade_restante <= 0:
+                break
+            lote.quantidade_disponivel += quantidade_restante
+            lote.save()
+            quantidade_restante = 0
+
+        # Se não houver lote, pode lançar exceção ou apenas ignorar
+        if quantidade_restante > 0:
+            messages.warning(request, f"Não foi possível devolver {quantidade_restante} unidades de {produto.nome} (sem lote disponível).")
+
+    # Agora sim remover os itens e a venda
+    itens.delete()
     venda.delete()
+
+    messages.success(request, f"Venda #{venda_id} removida e estoque atualizado.")
     return redirect('listar_vendas')
 
 

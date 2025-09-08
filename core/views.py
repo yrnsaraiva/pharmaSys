@@ -19,7 +19,7 @@ def dashboard(request):
     total_vendas_hoje = vendas_hoje.aggregate(total=Sum('total'))['total'] or 0
 
     validade_proxima = Lote.objects.filter(
-        data_validade__range=[hoje, hoje + timedelta(days=30)]
+        data_validade__range=[hoje, hoje + timedelta(days=90)]
     ).count()
 
     # Receita mensal

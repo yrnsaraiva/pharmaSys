@@ -15,13 +15,14 @@ def criar_cliente(request):
         nome_cliente = request.POST.get('nome')
         telefone_cliente = request.POST.get("phone")
         email_cliente = request.POST.get("email")
+        endereco_cliente = request.POST.get("endereco")
 
         # Criação do fornecedor
         cliente = Cliente.objects.create(
             nome=nome_cliente,
             telefone=telefone_cliente,
             email=email_cliente,
-
+            endereco=endereco_cliente
         )
         print(cliente)
         cliente.save()
@@ -62,6 +63,7 @@ def editar_cliente(request, cliente_id):
         cliente.nome = request.POST.get('nome')
         cliente.telefone = request.POST.get("telefone")
         cliente.email = request.POST.get("email")
+        cliente.endereco = request.POST.get("endereco")
 
         cliente.save()
         return redirect("listar_cliente")
