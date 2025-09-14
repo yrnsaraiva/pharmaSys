@@ -1,6 +1,3 @@
-
-
-
 from django.contrib import admin
 from django.db.models import Sum, F, DecimalField, ExpressionWrapper
 from vendas.models import Venda, ItemVenda
@@ -9,9 +6,13 @@ from vendas.models import Venda, ItemVenda
 class ItemVendaInline(admin.TabularInline):
     model = ItemVenda
     extra = 1
-    fields = ('produto', 'quantidade', 'preco_unitario', 'subtotal')
-    readonly_fields = ('subtotal',)
+    fields = ('produto', 'quantidade', 'preco_unitario', 'mostrar_subtotal')
+    readonly_fields = ('mostrar_subtotal',)
     autocomplete_fields = ('produto',)
+
+    def mostrar_subtotal(self, obj):
+        return obj.subtotal
+    mostrar_subtotal.short_description = "Subtotal"
 
 
 @admin.register(Venda)
@@ -38,5 +39,9 @@ class VendaAdmin(admin.ModelAdmin):
 
 @admin.register(ItemVenda)
 class ItemVendaAdmin(admin.ModelAdmin):
-    list_display = ('venda', 'produto', 'quantidade', 'subtotal')
+    list_display = ('venda', 'produto', 'quantidade', 'mostrar_subtotal')
     list_filter = ('produto__categoria__tipo',)
+
+    def mostrar_subtotal(self, obj):
+        return obj.subtotal
+    mostrar_subtotal.short_description = "Subtotal"

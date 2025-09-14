@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models import Sum
 from datetime import date
+from decimal import Decimal, ROUND_CEILING
 
 from fornecedores.models import Fornecedor
 
@@ -29,8 +30,12 @@ class Produto(models.Model):
     categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True)
     fornecedor = models.ForeignKey(Fornecedor, on_delete=models.SET_NULL, null=True)
     codigo_barras = models.CharField(max_length=50, unique=True, null=True, blank=True)
-    preco_venda = models.DecimalField(max_digits=10, decimal_places=2)
+
     preco_compra = models.DecimalField(max_digits=10, decimal_places=2)
+    preco_venda = models.DecimalField(max_digits=10, decimal_places=2)
+    preco_carteira = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
+    carteiras_por_caixa = models.PositiveIntegerField(default=1, null=True, blank=True)
     estoque_minimo = models.PositiveIntegerField(default=10)
 
     # Campos específicos para medicamentos (opcionais)
@@ -70,7 +75,7 @@ class Produto(models.Model):
     controlado = models.BooleanField(default=False)  # Só relevante se for medicamento
 
     def __str__(self):
-        return f'{self.nome} - {self.codigo_barras}'
+        return f'{self.nome} - {self.codigo_barras or "sem código"}'
 
     def is_medicamento(self):
         return self.categoria.tipo == "medicamento"
@@ -93,13 +98,45 @@ class Produto(models.Model):
         lote = self.lote_set.filter(data_validade__gte=date.today()).order_by("data_validade").first()
         return lote.data_validade if lote else None
 
+    def preco_carteira_calculado(self):
+        """Se o preço da carteira não for definido manualmente, calcula a partir do preço da caixa"""
+        from decimal import Decimal, ROUND_CEILING
+        if self.preco_carteira:
+            return self.preco_carteira
+        if self.preco_venda and self.carteiras_por_caixa > 0:
+            return (self.preco_venda / self.carteiras_por_caixa).quantize(
+                Decimal("1."), rounding=ROUND_CEILING
+            )
+        return None
+
+    def save(self, *args, **kwargs):
+        # Só calcula se preco_carteira não estiver definido
+        if self.preco_venda and self.carteiras_por_caixa:
+            if not self.preco_carteira:
+                preco_venda_decimal = Decimal(str(self.preco_venda))
+                carteiras_decimal = Decimal(str(self.carteiras_por_caixa))
+                self.preco_carteira = (preco_venda_decimal / carteiras_decimal).quantize(Decimal("1."),
+                                                                                         rounding=ROUND_CEILING)
+        super().save(*args, **kwargs)
+
 
 class Lote(models.Model):
     produto = models.ForeignKey(Produto, on_delete=models.CASCADE)
     numero_lote = models.CharField(max_length=50)
-    quantidade_disponivel = models.PositiveIntegerField()
-    data_validade = models.DateField()  # Opcional para não-medicamentos (ex.: shampoo)
+    nr_caixas = models.PositiveIntegerField(default=1)
+    quantidade_disponivel = models.PositiveIntegerField(editable=False, null=True, blank=True)
+    data_validade = models.DateField()
     data_fabricacao = models.DateField(blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        # Inicializa estoque apenas se ainda não tiver valor
+        if self.quantidade_disponivel is None:
+            if self.produto and self.produto.carteiras_por_caixa:
+                self.quantidade_disponivel = self.nr_caixas * self.produto.carteiras_por_caixa
+            else:
+                self.quantidade_disponivel = self.nr_caixas
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Lote {self.numero_lote} - {self.produto.nome}"
+

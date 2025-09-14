@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.db import transaction
 from django.core.validators import MinValueValidator
 from clientes.models import Cliente
 from productos.models import Lote, Produto
@@ -41,31 +42,74 @@ class Venda(models.Model):
 
 
 class ItemVenda(models.Model):
+    UNIDADE_CHOICES = [
+        ("caixa", "Caixa"),
+        ("carteira", "Carteira"),
+    ]
+
     venda = models.ForeignKey(Venda, on_delete=models.CASCADE, related_name="itens")
     produto = models.ForeignKey(Produto, on_delete=models.PROTECT)
     quantidade = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     preco_unitario = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-
-    class Meta:
-        verbose_name = 'Item de Venda'
-        verbose_name_plural = 'Itens de Venda'
+    unidade = models.CharField(max_length=10, choices=UNIDADE_CHOICES, default="carteira")
 
     def __str__(self):
-        return f"{self.quantidade}x {self.produto.nome}"
+        return f"{self.quantidade} {self.unidade}(s) de {self.produto.nome}"
 
     def save(self, *args, **kwargs):
-        # Garante que o preço unitário seja definido no momento da criação
+        # Definir preco_unitario se não existir
         if not self.preco_unitario and self.produto:
-            self.preco_unitario = self.produto.preco_venda
+            if self.unidade == "caixa":
+                self.preco_unitario = self.produto.preco_venda
+            else:  # carteira
+                self.preco_unitario = self.produto.preco_carteira_calculado()
+
         super().save(*args, **kwargs)
 
-        # Atualiza automaticamente o total da venda
-        if self.venda_id:  # só recalcula se a venda já existir
+        # Baixa estoque após salvar o item
+        if self.venda_id:
+            self.baixar_estoque()
             self.venda.calcular_total()
+
+    def baixar_estoque(self):
+        qtd = self.quantidade
+        if self.unidade == "caixa":
+            qtd *= (self.produto.carteiras_por_caixa or 1)
+
+        print(f"[DEBUG] Baixando estoque de {self.produto.nome}: {qtd} unidades")
+
+        with transaction.atomic():
+            lotes = self.produto.lote_set.select_for_update().filter(
+                quantidade_disponivel__gt=0
+            ).order_by("data_validade", "id")
+
+            for lote in lotes:
+                if qtd <= 0:
+                    break
+
+                if lote.quantidade_disponivel >= qtd:
+                    lote.quantidade_disponivel -= qtd
+                    # Atualiza nr_caixas
+                    if self.produto.carteiras_por_caixa:
+                        lote.nr_caixas = lote.quantidade_disponivel // self.produto.carteiras_por_caixa
+                    else:
+                        lote.nr_caixas = lote.quantidade_disponivel
+                    lote.save(update_fields=["quantidade_disponivel", "nr_caixas"])
+                    qtd = 0
+                else:
+                    qtd -= lote.quantidade_disponivel
+                    lote.quantidade_disponivel = 0
+                    lote.nr_caixas = 0
+                    lote.save(update_fields=["quantidade_disponivel", "nr_caixas"])
+
+            if qtd > 0:
+                raise ValueError(f"Estoque insuficiente para {self.produto.nome}!")
 
     @property
     def subtotal(self):
-        """Retorna o subtotal, evitando erro se preco_unitario ainda não existir."""
-        if not self.preco_unitario or not self.quantidade:
-            return 0
-        return self.preco_unitario * self.quantidade
+        return (self.preco_unitario or 0) * (self.quantidade or 0)
+
+
+
+
+

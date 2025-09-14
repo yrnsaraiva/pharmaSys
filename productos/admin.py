@@ -23,13 +23,13 @@ class ProdutoAdmin(admin.ModelAdmin):
     search_fields = ('nome', 'codigo_barras', 'principio_ativo')  # Busca flexível
     fieldsets = (
         ('Informações Básicas', {
-            'fields': ('nome', 'categoria', 'fornecedor', 'codigo_barras')
+            'fields': ('nome', 'codigo_barras', 'categoria', 'fornecedor', 'estoque_minimo')
         }),
         ('Preços', {
-            'fields': ('preco_venda', 'preco_compra', 'estoque_minimo')
+            'fields': ('preco_venda', 'preco_compra', 'preco_carteira')
         }),
         ('Detalhes Farmacêuticos', {
-            'fields': ('principio_ativo', 'controlado', 'forma_farmaceutica', 'dosagem', 'nivel_prescricao',),
+            'fields': ('forma_farmaceutica', 'carteiras_por_caixa', 'principio_ativo', 'controlado', 'dosagem', 'nivel_prescricao',),
             'description': 'Preencher apenas se for medicamento.',
             'classes': ('collapse',)  # Opcional: recolhe a seção
         }),
@@ -42,6 +42,6 @@ class ProdutoAdmin(admin.ModelAdmin):
 
 @admin.register(Lote)
 class LoteAdmin(admin.ModelAdmin):
-    list_display = ('numero_lote', 'quantidade_disponivel', 'data_validade')
+    list_display = ('numero_lote', 'nr_caixas', 'quantidade_disponivel', 'data_validade')
     list_filter = ('produto__categoria__tipo',)  # Filtrar por tipo de produto
 

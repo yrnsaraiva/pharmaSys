@@ -1,172 +1,188 @@
 {% extends 'main.html' %}
 {% block content %}
 
-    {% include 'navbar.html' %}
+{% include 'navbar.html' %}
 
-    <div class="flex-1 ml-64 p-8" id="main-content">
-            <div class="mb-8" id="page-header">
-                <div class="flex items-center mb-4">
-                    <button onclick="window.history.back()"
-                            class="text-gray-500 hover:text-gray-700 mr-4 transition-colors">
-                        <i class="text-lg">
-                            <svg aria-hidden="true" class="w-5 h-5" viewBox="0 0 448 512">
-                                <path d="M9.4 233.4c-12.5 12.5-12.5 32.8
-                            0 45.3l160 160c12.5 12.5 32.8 12.5
-                            45.3 0s12.5-32.8 0-45.3L109.2
-                            288H416c17.7 0 32-14.3
-                            32-32s-14.3-32-32-32H109.2l105.5-105.4c12.5-12.5
-                            12.5-32.8 0-45.3s-32.8-12.5-45.3
-                            0l-160 160z" fill="currentColor"/>
-                            </svg>
-                        </i>
-                    </button>
+<div class="flex-1 ml-64 p-8" id="main-content">
+
+    <!-- Cabeçalho da página -->
+    <div class="mb-8" id="page-header">
+        <div class="flex items-center mb-4">
+            <button onclick="window.history.back()"
+                    class="text-gray-500 hover:text-gray-700 mr-4 transition-colors">
+                ← Voltar
+            </button>
+            <div>
+                <h2 class="text-xl font-bold text-gray-900">Novo Produto</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulário -->
+    <div class="bg-white rounded-xl shadow-sm border border-pharmacy-gray p-8">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- Seção: Informações Básicas -->
+            <div class="mb-6 border-b border-pharmacy-gray pb-2">
+                <button type="button" class="w-full flex justify-between items-center text-left text-lg font-semibold text-gray-800"
+                        onclick="toggleCollapse('basicas')">
+                    Informações Básicas
+                    <span id="icon-basicas">+</span>
+                </button>
+                <div id="basicas" class="mt-4 hidden grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Nome -->
                     <div>
-                        <h2 class="text-xl font-bold text-gray-900 mb-2">Novo Produto</h2>
-                        <p class="text-gray-600">Cadastre um novo produto no sistema</p>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Nome *</label>
+                        <input type="text" name="nome" required value="{{ producto.nome }}"
+                               class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                    </div>
+                    <!-- Código de Barras -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Código de Barras</label>
+                        <input type="text" name="codigo_barras" value="{{ producto.codigo_barras }}"
+                               class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                    </div>
+                    <!-- Categoria -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Categoria *</label>
+                        <select name="categoria"
+                                class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                            {% for categoria in categorias %}
+                                <option value="{{ categoria.id }}" {% if producto.categoria and producto.categoria.id == categoria.id %}selected{% endif %}>{{ categoria.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!-- Fornecedor -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Fornecedor *</label>
+                        <select name="fornecedor"
+                                class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                            {% for fornecedor in fornecedores %}
+                                <option value="{{ fornecedor.id }}" {% if producto.fornecedor and producto.fornecedor.id == fornecedor.id %}selected{% endif %}>{{ fornecedor.nome }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-sm border border-pharmacy-gray p-8">
-                <form method="post" enctype="multipart/form-data">
-                    {% csrf_token %}
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <!-- Nome -->
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Nome <span
-                                    class="text-red-500">*</span></label>
-                            <input type="text" name="nome" required value="{{ producto.nome }}"
-                                   class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
-                        </div>
-
-                        <!-- Código de Barras -->
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Código de Barras </label>
-                            <input type="text" name="codigo_barras" required value="{{ producto.codigo_barras }}"
-                                   class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
-                        </div>
-
-                        <!-- Categoria -->
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Categoria</label>
-                            <select name="categoria"
-                                    class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
-                                {% for categoria in categorias %}
-                                    <option value="{{ categoria.id }}">{{ categoria.nome }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <!-- Fornecedor -->
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Fornecedor</label>
-                            <select name="fornecedor"
-                                    class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
-                                {% for fornecedor in fornecedores %}
-                                    <option value="{{ fornecedor.id }}">{{ fornecedor.nome }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <!-- Preço Venda -->
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Preço Venda (MZN)</label>
-                            <input type="number" step="0.01" name="preco_venda" value="{{ producto.preco_venda }}"
-                                   class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
-                        </div>
-
-                        <!-- Preço Compra -->
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Preço Compra (MZN)</label>
-                            <input type="number" step="0.01" name="preco_compra" value="{{ producto.preco_compra }}"
-                                   class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
-                        </div>
-
-                        <!-- Estoque mínimo -->
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Estoque Mínimo</label>
-                            <input type="number" name="estoque_minimo" value="{{ producto.estoque_minimo }}"
-                                   class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
-                        </div>
-
-                        <!-- Forma farmacêutica -->
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Forma Farmacêutica</label>
-                            <select name="forma_farmaceutica"
-                                    class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
-                                <option value="">-- Selecione --</option>
-                                <option value="comprimido">Comprimido</option>
-                                <option value="capsula">Cápsula</option>
-                                <option value="xarope">Xarope</option>
-                                <option value="injecao">Injetável</option>
-                                <option value="pomada">Pomada</option>
-                                <option value="supositorio">Supositório</option>
-                                <option value="spray">Spray</option>
-                                <option value="outro">Outro</option>
-                            </select>
-                        </div>
-
-                        <!-- Dosagem -->
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Dosagem</label>
-                            <input type="text" name="dosagem" placeholder="Ex: 500mg, 20mg/mL" value="{{ producto.dosagem }}"
-                                   class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
-                        </div>
-
-                        <!-- Nível de prescrição -->
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Nível de Prescrição</label>
-                            <select name="nivel_prescricao"
-                                    class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
-                                <option value="niv0">Niv 0</option>
-                                <option value="niv1">Niv 1</option>
-                                <option value="niv2">Niv 2</option>
-                                <option value="niv3">Niv 3</option>
-                                <option value="niv4">Niv 4</option>
-                            </select>
-                        </div>
-
-                        <!-- Princípio ativo -->
-                        <div class="lg:col-span-2">
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Princípio Ativo</label>
-                            <input type="text" name="principio_ativo" value="{{ producto.principio_ativo }}"
-                                   class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
-                        </div>
-
-                        <!-- Controlado -->
-                        <div class="lg:col-span-2">
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" name="controlado"
-                                       class="w-4 h-4 text-pharmacy-green border-gray-300 rounded">
-                                <span class="ml-2 text-gray-700">Medicamento controlado</span>
-                            </label>
-                        </div>
+            <!-- Seção: Preços e Estoque -->
+            <div class="mb-6 border-b border-pharmacy-gray pb-2">
+                <button type="button" class="w-full flex justify-between items-center text-left text-lg font-semibold text-gray-800"
+                        onclick="toggleCollapse('precos')">
+                    Preços e Estoque
+                    <span id="icon-precos">+</span>
+                </button>
+                <div id="precos" class="mt-4 hidden grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Preço Compra -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Preço de Compra (Caixa) *</label>
+                        <input type="number" step="0.01" name="preco_compra" value="{{ producto.preco_compra }}"
+                               class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
                     </div>
-
-                    <!-- Botões -->
-                    <div class="flex justify-end space-x-4 mt-8 pt-6 border-t border-pharmacy-gray">
-                        <a href="{% url 'productos_list' %}"
-                           class="px-6 py-3 border border-pharmacy-gray text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium flex items-center">
-                            Cancelar
-                        </a>
-                        <button type="submit"
-                                class="px-6 py-3 bg-pharmacy-green hover:bg-pharmacy-green-dark text-white rounded-lg transition-colors font-medium flex items-center shadow-lg">
-                            <svg class="mr-2 w-5 h-5" viewBox="0 0 448 512" fill="currentColor">
-                                <path d="M438.6 105.4c12.5 12.5
-                            12.5 32.8 0 45.3l-256 256c-12.5
-                            12.5-32.8 12.5-45.3
-                            0l-128-128c-12.5-12.5-12.5-32.8
-                            0-45.3s32.8-12.5 45.3 0L160
-                            338.7 393.4 105.4c12.5-12.5
-                            32.8-12.5 45.3 0z"/>
-                            </svg>
-                            Salvar Produto
-                        </button>
+                    <!-- Preço Venda Caixa -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Preço de Venda (Caixa) *</label>
+                        <input type="number" step="0.01" name="preco_venda" value="{{ producto.preco_venda }}"
+                               class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
                     </div>
-                </form>
+                    <!-- Carteiras por Caixa -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Unidades por Caixa</label>
+                        <input type="number" name="carteiras_por_caixa" min="1" value="{{ producto.carteiras_por_caixa }}"
+                               class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                    </div>
+                    <!-- Preço Carteira -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Preço por Carteira (Opcional)</label>
+                        <input type="number" step="0.01" name="preco_carteira" value="{{ producto.preco_carteira }}"
+                               class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                        <p class="text-sm text-gray-500 mt-1">Se vazio, será calculado automaticamente a partir do preço da caixa.</p>
+                    </div>
+                    <!-- Estoque mínimo -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Estoque Mínimo *</label>
+                        <input type="number" name="estoque_minimo" value="{{ producto.estoque_minimo }}"
+                               class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                    </div>
+                </div>
             </div>
-        </div>
 
+            <!-- Seção: Detalhes do Medicamento -->
+            <div class="mb-6 border-b border-pharmacy-gray pb-2">
+                <button type="button" class="w-full flex justify-between items-center text-left text-lg font-semibold text-gray-800"
+                        onclick="toggleCollapse('medicamento')">
+                    Detalhes do Medicamento
+                    <span id="icon-medicamento">+</span>
+                </button>
+                <div id="medicamento" class="mt-4 hidden grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Forma farmacêutica -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Forma Farmacêutica</label>
+                        <select name="forma_farmaceutica"
+                                class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                            <option value="">-- Selecione --</option>
+                            {% for forma in Producto.FORMA_FARMACEUTICA_CHOICES %}
+                                <option value="{{ forma.0 }}" {% if producto and producto.forma_farmaceutica == forma.0 %}selected{% endif %}>{{ forma.1 }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!-- Dosagem -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Dosagem</label>
+                        <input type="text" name="dosagem" placeholder="Ex: 500mg, 20mg/mL" value="{{ producto.dosagem }}"
+                               class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                    </div>
+                    <!-- Nível de prescrição -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Nível de Prescrição</label>
+                        <select name="nivel_prescricao"
+                                class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                            {% for niv in Producto.NIVEL_PRESCRICAO_CHOICES %}
+                                <option value="{{ niv.0 }}" {% if Producto.nivel_prescricao == niv.0 %}selected{% endif %}>{{ niv.1 }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!-- Princípio ativo -->
+                    <div class="lg:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Princípio Ativo</label>
+                        <input type="text" name="principio_ativo" value="{{ producto.principio_ativo }}"
+                               class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                    </div>
+                    <!-- Controlado -->
+                    <div class="lg:col-span-2">
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" name="controlado" {% if producto.controlado %}checked{% endif %}
+                                   class="w-4 h-4 text-pharmacy-green border-gray-300 rounded">
+                            <span class="ml-2 text-gray-700">Medicamento controlado</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botões -->
+            <div class="flex justify-end space-x-4 mt-8 pt-6 border-pharmacy-gray">
+                <a href="{% url 'productos_list' %}"
+                   class="px-6 py-3 border border-pharmacy-gray text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium flex items-center">
+                    Cancelar
+                </a>
+                <button type="submit"
+                        class="px-6 py-3 bg-pharmacy-green hover:bg-pharmacy-green-dark text-white rounded-lg transition-colors font-medium flex items-center shadow-lg">
+                    Salvar Produto
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleCollapse(id) {
+    const div = document.getElementById(id);
+    const icon = document.getElementById('icon-' + id);
+    div.classList.toggle('hidden');
+    icon.textContent = div.classList.contains('hidden') ? '+' : '-';
+}
+</script>
 
 {% endblock %}

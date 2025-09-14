@@ -10,7 +10,7 @@ from django.db.models import Q
 # Listar categorias
 @login_required
 def categorias_list(request):
-    categorias = Categoria.objects.all()
+    categorias = Categoria.objects.all().order_by('nome')
 
     search = request.GET.get('search', '')
     if search:
@@ -20,10 +20,20 @@ def categorias_list(request):
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
+    # Calcular range dinâmico
+    current_page = page_obj.number
+    total_pages = paginator.num_pages
+
+    # mostra 2 antes e 2 depois
+    start_page = max(current_page - 2, 1)
+    end_page = min(current_page + 2, total_pages)
+    custom_range = range(start_page, end_page + 1)
+
     return render(request, "productos/categorias.html", {
         "categorias": page_obj,
         "page_obj": page_obj,
         "search": search,
+        "custom_range": custom_range,
     })
 
 
@@ -59,7 +69,7 @@ def remover_categoria(request, categoria_id):
 @login_required
 def productos_list(request):
     # Obtém todos os productos
-    productos = Produto.objects.all()
+    productos = Produto.objects.all().order_by('nome')
 
     # Filtros
     search = request.GET.get('search', '')
@@ -122,6 +132,8 @@ def cadastrar_producto(request):
         preco_venda = request.POST.get("preco_venda")
         preco_compra = request.POST.get("preco_compra")
         estoque_minimo = request.POST.get("estoque_minimo")
+        carteiras_por_caixa = request.POST.get("carteiras_por_caixa")
+        preco_carteira = request.POST.get("preco_carteira")
 
         # campos opcionais
         forma_farmaceutica = request.POST.get("forma_farmaceutica") or None
@@ -140,12 +152,14 @@ def cadastrar_producto(request):
             codigo_barras=codigo_barras,
             preco_venda=preco_venda,
             preco_compra=preco_compra,
+            preco_carteira=preco_carteira,
             estoque_minimo=estoque_minimo,
+            carteiras_por_caixa=carteiras_por_caixa,
             forma_farmaceutica=forma_farmaceutica,
             dosagem=dosagem,
             nivel_prescricao=nivel_prescricao,
             principio_ativo=principio_ativo,
-            controlado=controlado
+            controlado=controlado,
         )
         produto.save()
 
@@ -154,7 +168,10 @@ def cadastrar_producto(request):
 
     return render(request, "productos/novo_produto.html", {
         "categorias": categorias,
-        "fornecedores": fornecedores
+        "fornecedores": fornecedores,
+        "Producto": Produto,
+        "producto": {}
+
     })
 
 
@@ -174,30 +191,36 @@ def editar_producto(request, producto_id):
 
     context = {'producto': producto,
                "categorias": categorias,
-               "fornecedores": fornecedores
+               "fornecedores": fornecedores,
+               "Producto": Produto
                }
 
     if request.method == "POST":
-        nome = request.POST.get("nome")
+        # Campos obrigatórios
+        producto.nome = request.POST.get("nome")
         categoria_id = request.POST.get("categoria")
         fornecedor_id = request.POST.get("fornecedor")
-        codigo_barras = request.POST.get("codigo_barras")
-        preco_venda = request.POST.get("preco_venda")
-        preco_compra = request.POST.get("preco_compra")
-        estoque_minimo = request.POST.get("estoque_minimo")
+        producto.codigo_barras = request.POST.get("codigo_barras")
+        producto.preco_venda = float(request.POST.get("preco_venda") or 0)
+        producto.preco_compra = float(request.POST.get("preco_compra") or 0)
+        producto.estoque_minimo = int(request.POST.get("estoque_minimo") or 0)
+        producto.carteiras_por_caixa = int(request.POST.get("carteiras_por_caixa") or 0)
+        producto.preco_carteira = float(request.POST.get("preco_carteira") or 0) if request.POST.get(
+            "preco_carteira") else None
 
-        # campos opcionais
-        forma_farmaceutica = request.POST.get("forma_farmaceutica") or None
-        dosagem = request.POST.get("dosagem") or None
-        nivel_prescricao = request.POST.get("nivel_prescricao") or None
-        principio_ativo = request.POST.get("principio_ativo") or None
-        controlado = request.POST.get("controlado") == "on"
+        # Campos opcionais
+        producto.forma_farmaceutica = request.POST.get("forma_farmaceutica") or None
+        producto.dosagem = request.POST.get("dosagem") or None
+        producto.nivel_prescricao = request.POST.get("nivel_prescricao") or None
+        producto.principio_ativo = request.POST.get("principio_ativo") or None
+        producto.controlado = request.POST.get("controlado") == "on"
 
-        categoria = get_object_or_404(Categoria, id=categoria_id) if categoria_id else None
-        fornecedor = get_object_or_404(Fornecedor, id=fornecedor_id) if fornecedor_id else None
-
+        # Relacionamentos
+        producto.categoria = get_object_or_404(Categoria, id=categoria_id) if categoria_id else None
+        producto.fornecedor = get_object_or_404(Fornecedor, id=fornecedor_id) if fornecedor_id else None
 
         producto.save()
+        messages.success(request, "✅ Produto atualizado com sucesso!")
         return redirect('productos_list')
 
     return render(request, 'productos/novo_produto.html', context)
@@ -215,9 +238,19 @@ def listar_lotes(request):
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
+    # Calcular range dinâmico
+    current_page = page_obj.number
+    total_pages = paginator.num_pages
+
+    # mostra 2 antes e 2 depois
+    start_page = max(current_page - 2, 1)
+    end_page = min(current_page + 2, total_pages)
+    custom_range = range(start_page, end_page + 1)
+
     context = {
         "page_obj": page_obj,
         "request": request,
+        "custom_range": custom_range,
     }
     return render(request, "productos/lotes.html", context)
 
@@ -227,20 +260,29 @@ def criar_lote(request):
     if request.method == "POST":
         produto_id = request.POST.get("produto")
         numero_lote = request.POST.get("numero_lote")
-        quantidade_disponivel = request.POST.get("quantidade_disponivel")
+        nr_caixas = request.POST.get("nr_caixas")  # novo campo: nº de caixas
         data_validade = request.POST.get("data_validade")
         data_fabricacao = request.POST.get("data_fabricacao")
 
         produto = get_object_or_404(Produto, id=produto_id)
 
+        # Calcula quantidade_disponivel em carteiras
+        try:
+            nr_caixas = int(nr_caixas)
+        except (TypeError, ValueError):
+            nr_caixas = 0
+
+        quantidade_disponivel = nr_caixas * (produto.carteiras_por_caixa or 1)
+
         lote = Lote.objects.create(
             produto=produto,
             numero_lote=numero_lote,
-            quantidade_disponivel=quantidade_disponivel or 0,
+            nr_caixas=nr_caixas,
+            quantidade_disponivel=quantidade_disponivel,
             data_validade=data_validade or None,
             data_fabricacao=data_fabricacao or None,
         )
-        return redirect("listar_lotes")  # ajuste para sua URL de listagem
+        return redirect("listar_lotes")
 
     context = {
         "produtos": Produto.objects.all()

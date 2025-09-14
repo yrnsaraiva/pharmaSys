@@ -3,6 +3,7 @@ from django.forms.models import model_to_dict
 from django.contrib import messages
 from django.db.models import Q
 from django.core.paginator import Paginator
+from django.db import transaction
 from datetime import date
 from django.contrib.auth.decorators import login_required
 import decimal
@@ -41,6 +42,15 @@ def listar_vendas(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    # Calcular range dinâmico
+    current_page = page_obj.number
+    total_pages = paginator.num_pages
+
+    # mostra 2 antes e 2 depois
+    start_page = max(current_page - 2, 1)
+    end_page = min(current_page + 2, total_pages)
+    custom_range = range(start_page, end_page + 1)
+
     context = {
         'vendas': vendas,
         'search': search,
@@ -49,6 +59,7 @@ def listar_vendas(request):
         'payment': payment,
         'formas_pagamento': Venda.FORMA_PAGAMENTO_CHOICES,
         'page_obj': page_obj,
+        "custom_range": custom_range,
     }
     return render(request, 'vendas/listar_vendas.html', context)
 
@@ -102,9 +113,9 @@ def criar_venda(request):
     subtotal = 0
 
     if request.method == 'POST':
-        # codigo_barras = request.POST.get('codigo_barras')
-        # nome_produto = request.POST.get('nome_produto')
         produto_id = request.POST.get('produto')  # campo do select2
+        unidade = request.POST.get('unidade', 'carteira')  # default carteira
+
         if produto_id:
             try:
                 produto = Produto.objects.get(id=produto_id)
@@ -126,11 +137,18 @@ def criar_venda(request):
                 # Adicionar informações extras
                 produto_dict['categoria_nome'] = produto.categoria.nome if produto.categoria else ''
                 produto_dict['estoque_total'] = estoque_total
+                produto_dict['unidade'] = unidade  # 👈 adicionar unidade
 
-                # Verificar se o produto já está no carrinho
+                # Definir preço de venda conforme unidade
+                if unidade == 'caixa':
+                    produto_dict['preco_venda'] = float(produto.preco_venda)
+                else:  # carteira
+                    produto_dict['preco_venda'] = float(produto.preco_carteira_calculado())
+
+                # Verificar se o produto já está no carrinho com a mesma unidade
                 produto_existente = None
                 for item in cart:
-                    if item['id'] == produto_dict['id']:
+                    if item['id'] == produto_dict['id'] and item.get('unidade') == unidade:
                         produto_existente = item
                         break
 
@@ -141,14 +159,13 @@ def criar_venda(request):
                                        f'Estoque insuficiente para {produto.nome}! Disponível: {estoque_total}')
                     else:
                         produto_existente['quantidade'] += 1
-                        produto_existente['subtotal'] = produto_existente['preco_venda'] * produto_existente[
-                            'quantidade']
-                        messages.success(request, f'Quantidade de {produto.nome} aumentada!')
+                        produto_existente['subtotal'] = produto_existente['preco_venda'] * produto_existente['quantidade']
+                        messages.success(request, f'Quantidade de {produto.nome} ({unidade}) aumentada!')
                 else:
                     produto_dict['quantidade'] = 1
                     produto_dict['subtotal'] = produto_dict['preco_venda']
                     cart.append(produto_dict)
-                    messages.success(request, f'Produto {produto.nome} adicionado ao carrinho!')
+                    messages.success(request, f'Produto {produto.nome} ({unidade}) adicionado ao carrinho!')
 
                 request.session['cart'] = cart
                 request.session.modified = True
@@ -179,67 +196,50 @@ def criar_venda(request):
 
 @login_required
 def finalizar_venda(request):
-    if request.method == 'POST':
-        cart = request.session.get('cart', [])
+    if request.method == "POST":
+        cliente_id = request.POST.get("cliente")
+        forma_pagamento = request.POST.get("forma_pagamento")
+        atendente = request.user
 
-        if not cart:
-            messages.error(request, 'Carrinho vazio! Não é possível finalizar a venda.')
-            return redirect('criar_venda')
+        cliente = None
+        if cliente_id:
+            cliente = get_object_or_404(Cliente, id=int(cliente_id))
+
+        # Cria venda com total inicial 0 (será calculado depois)
+        venda = Venda.objects.create(
+            cliente=cliente,
+            atendente=atendente,
+            forma_pagamento=forma_pagamento,
+            total=0
+        )
+
+        cart = request.session.get("cart", [])
 
         try:
-            # Obter dados do formulário
-            cliente_id = request.POST.get('cliente')
-            forma_pagamento = request.POST.get('forma_pagamento')
+            with transaction.atomic():
+                for item in cart:
+                    produto = get_object_or_404(Produto, id=item["id"])
+                    ItemVenda.objects.create(
+                        venda=venda,
+                        produto=produto,
+                        quantidade=item["quantidade"],
+                        preco_unitario=item["preco_venda"],
+                        unidade=item["unidade"]
+                    )
 
-            # Calcular o total da venda
-            total_venda = sum(item['preco_venda'] * item.get('quantidade', 1) for item in cart)
+                # Recalcular total da venda
+                venda.calcular_total()
 
-            # Preparar dados da venda
-            venda_data = {
-                'atendente': request.user,
-                'total': total_venda,
-                'forma_pagamento': forma_pagamento,
-            }
+        except ValueError as e:
+            messages.error(request, f"Erro ao finalizar venda: {e}")
+            return redirect("criar_venda")
 
-            # Adicionar cliente se foi selecionado
-            if cliente_id:
-                cliente = Cliente.objects.get(id=cliente_id)
-                venda_data['cliente'] = cliente
+        # Limpar carrinho
+        request.session["cart"] = []
+        request.session.modified = True
 
-            # Criar a venda
-            venda = Venda.objects.create(**venda_data)
-
-            # Processar cada item do carrinho
-            for item in cart:
-                produto = Produto.objects.get(id=item['id'])
-                quantidade_vendida = item.get('quantidade', 1)
-
-                # Criar item da venda
-                ItemVenda.objects.create(
-                    venda=venda,
-                    produto=produto,
-                    quantidade=quantidade_vendida,
-                    preco_unitario=item['preco_venda']
-                )
-
-                # Atualizar estoque usando sistema de lotes (FIFO)
-                atualizar_estoque_lotes(produto, quantidade_vendida)
-
-            # Limpar o carrinho
-            request.session['cart'] = []
-            request.session.modified = True
-
-            messages.success(request, f'Venda #{venda.id} finalizada com sucesso! Total: {total_venda:.2f} MZN')
-            return redirect('detalhes_venda', venda_id=venda.id)
-
-        except Produto.DoesNotExist:
-            messages.error(request, 'Erro: Produto não encontrado no sistema.')
-            return redirect('criar_venda')
-        except Exception as e:
-            messages.error(request, f'Erro ao finalizar venda: {str(e)}')
-            return redirect('listar_vendas')
-
-    return redirect('criar_venda')
+        messages.success(request, f"Venda #{venda.id} finalizada com sucesso!")
+        return redirect("detalhes_venda", venda_id=venda.id)  # ou para qualquer página de vendas
 
 
 def atualizar_estoque_lotes(produto, quantidade_vendida):

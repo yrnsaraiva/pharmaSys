@@ -53,7 +53,8 @@
                     <tr>
                         <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Produto</th>
                         <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Número do Lote</th>
-                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Quantidade</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Caixas</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Qnt.</th>
                         <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Validade</th>
                         <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Fabricação</th>
                         <th class="px-6 py-4 text-center text-sm font-semibold text-gray-900">Ações</th>
@@ -64,6 +65,7 @@
                         <tr class="hover:bg-pharmacy-gray-light/50 transition-colors">
                             <td class="px-6 py-4 font-medium text-gray-900">{{ lote.produto.nome }}</td>
                             <td class="px-6 py-4 text-sm text-gray-700">{{ lote.numero_lote }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-700">{{ lote.nr_caixas }}</td>
                             <td class="px-6 py-4 text-sm text-gray-700">{{ lote.quantidade_disponivel }}</td>
                             <td class="px-6 py-4 text-sm text-gray-700">{{ lote.data_validade|date:"d/m/Y"|default:"—" }}</td>
                             <td class="px-6 py-4 text-sm text-gray-700">{{ lote.data_fabricacao|date:"d/m/Y"|default:"—" }}</td>
@@ -111,6 +113,7 @@
                 <span class="font-medium">{{ page_obj.paginator.count }}</span> lotes
             </div>
 
+            <!-- Botões -->
             <div class="flex space-x-1">
                 {% if page_obj.has_previous %}
                     <a href="?page={{ page_obj.previous_page_number }}"
@@ -119,14 +122,27 @@
                     <span class="px-3 py-1 bg-gray-100 text-gray-400 rounded">Anterior</span>
                 {% endif %}
 
-                {% for num in page_obj.paginator.page_range %}
-                    {% if page_obj.number == num %}
+                <!-- Primeira página -->
+                {% if 1 not in custom_range %}
+                    <a href="?page=1" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">1</a>
+                    <span class="px-3 py-1">...</span>
+                {% endif %}
+
+                <!-- Range calculado -->
+                {% for num in custom_range %}
+                    {% if num == page_obj.number %}
                         <span class="px-3 py-1 bg-green-600 text-white rounded">{{ num }}</span>
                     {% else %}
-                        <a href="?page={{ num }}"
-                           class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">{{ num }}</a>
+                        <a href="?page={{ num }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">{{ num }}</a>
                     {% endif %}
                 {% endfor %}
+
+                <!-- Última página -->
+                {% if page_obj.paginator.num_pages not in custom_range %}
+                    <span class="px-3 py-1">...</span>
+                    <a href="?page={{ page_obj.paginator.num_pages }}"
+                       class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">{{ page_obj.paginator.num_pages }}</a>
+                {% endif %}
 
                 {% if page_obj.has_next %}
                     <a href="?page={{ page_obj.next_page_number }}"

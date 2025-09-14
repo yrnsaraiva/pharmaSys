@@ -21,10 +21,20 @@ def fornecedores_list(request):
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
+    # Calcular range dinâmico
+    current_page = page_obj.number
+    total_pages = paginator.num_pages
+
+    # mostra 2 antes e 2 depois
+    start_page = max(current_page - 2, 1)
+    end_page = min(current_page + 2, total_pages)
+    custom_range = range(start_page, end_page + 1)
+
     return render(request, "fornecedores/fornecedores.html", {
         "fornecedores": page_obj,
         "page_obj": page_obj,
         "search": search,  # útil para manter o valor no input
+        "custom_range": custom_range,
     })
 
 

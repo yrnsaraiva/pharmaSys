@@ -9,7 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ==========================
 SECRET_KEY = 'django-insecure-o%cf1_-^p95dr-aupdnimbg_-k@xugqx70f79_##63h9&ox1!y'
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-DEBUG = False
+DEBUG = True
 ALLOWED_HOSTS = ['*']  # Ajuste para produção
 
 # Permitir o domínio do seu site para POSTs
@@ -83,9 +83,9 @@ WSGI_APPLICATION = 'pharmaSys.wsgi.application'
 # DATABASE
 # ==========================
 DATABASES = {
-    'default': dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
-    )
+    # 'default': dj_database_url.config(
+    #     default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
+    # )
 }
 POSTGRES_LOCALLY = True
 if not DEBUG or POSTGRES_LOCALLY:
@@ -124,3 +124,6 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 LOGIN_URL = '/usuarios/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/usuarios/login/'
+
+
+
