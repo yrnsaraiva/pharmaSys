@@ -113,57 +113,63 @@ def criar_venda(request):
     subtotal = 0
 
     if request.method == 'POST':
-        produto_id = request.POST.get('produto')  # campo do select2
-        unidade = request.POST.get('unidade', 'carteira')  # default carteira
+        produto_id = request.POST.get('produto')
+        unidade = request.POST.get('unidade', 'carteira')
 
         if produto_id:
             try:
                 produto = Produto.objects.get(id=produto_id)
 
-                # Verificar estoque total considerando lotes válidos
+                # Verificar estoque total
                 estoque_total = produto.estoque_total()
                 if estoque_total <= 0:
                     messages.error(request, f'Produto {produto.nome} sem estoque!')
                     return redirect('criar_venda')
 
-                # Converter o modelo para dicionário
-                produto_dict = model_to_dict(produto)
+                # ✅ CORREÇÃO: Criar dicionário manualmente em vez de model_to_dict
+                produto_dict = {
+                    'id': produto.id,
+                    'nome': produto.nome,
+                    'categoria_nome': produto.categoria.nome if produto.categoria else '',
+                    'fornecedor_nome': produto.fornecedor.nome if produto.fornecedor else '',
+                    'estoque_total': estoque_total,
+                    'unidade': unidade,
+                    'quantidade': 1,
+                }
 
-                # Converter campos Decimal para float
-                for key, value in produto_dict.items():
-                    if isinstance(value, decimal.Decimal):
-                        produto_dict[key] = float(value)
-
-                # Adicionar informações extras
-                produto_dict['categoria_nome'] = produto.categoria.nome if produto.categoria else ''
-                produto_dict['estoque_total'] = estoque_total
-                produto_dict['unidade'] = unidade  # 👈 adicionar unidade
-
-                # Definir preço de venda conforme unidade
+                # ✅ CORREÇÃO: Cálculo seguro do preço
                 if unidade == 'caixa':
-                    produto_dict['preco_venda'] = float(produto.preco_venda)
+                    produto_dict['preco_venda'] = float(produto.preco_venda) if produto.preco_venda else 0.0
                 else:  # carteira
-                    produto_dict['preco_venda'] = float(produto.preco_carteira_calculado())
+                    preco_carteira = produto.preco_carteira_calculado()
+                    # ✅ CORREÇÃO CRÍTICA: Verificar se não é None antes de converter
+                    if preco_carteira is not None:
+                        produto_dict['preco_venda'] = float(preco_carteira)
+                    else:
+                        # Fallback: calcular manualmente
+                        if produto.preco_venda and produto.carteiras_por_caixa and produto.carteiras_por_caixa > 0:
+                            produto_dict['preco_venda'] = float(produto.preco_venda) / produto.carteiras_por_caixa
+                        else:
+                            produto_dict['preco_venda'] = 0.0
+
+                produto_dict['subtotal'] = produto_dict['preco_venda']
 
                 # Verificar se o produto já está no carrinho com a mesma unidade
                 produto_existente = None
-                for item in cart:
+                for i, item in enumerate(cart):
                     if item['id'] == produto_dict['id'] and item.get('unidade') == unidade:
-                        produto_existente = item
+                        produto_existente = i
                         break
 
-                if produto_existente:
+                if produto_existente is not None:
                     # Verificar se não excede o estoque
-                    if produto_existente['quantidade'] + 1 > estoque_total:
-                        messages.error(request,
-                                       f'Estoque insuficiente para {produto.nome}! Disponível: {estoque_total}')
+                    if cart[produto_existente]['quantidade'] + 1 > estoque_total:
+                        messages.error(request, f'Estoque insuficiente para {produto.nome}! Disponível: {estoque_total}')
                     else:
-                        produto_existente['quantidade'] += 1
-                        produto_existente['subtotal'] = produto_existente['preco_venda'] * produto_existente['quantidade']
+                        cart[produto_existente]['quantidade'] += 1
+                        cart[produto_existente]['subtotal'] = cart[produto_existente]['preco_venda'] * cart[produto_existente]['quantidade']
                         messages.success(request, f'Quantidade de {produto.nome} ({unidade}) aumentada!')
                 else:
-                    produto_dict['quantidade'] = 1
-                    produto_dict['subtotal'] = produto_dict['preco_venda']
                     cart.append(produto_dict)
                     messages.success(request, f'Produto {produto.nome} ({unidade}) adicionado ao carrinho!')
 
@@ -172,6 +178,9 @@ def criar_venda(request):
 
             except Produto.DoesNotExist:
                 messages.error(request, 'Produto não encontrado!')
+            except Exception as e:
+                messages.error(request, f'Erro ao processar produto: {str(e)}')
+                print(f"❌ ERRO: {e}")  # Debug
 
             return redirect('criar_venda')
 
