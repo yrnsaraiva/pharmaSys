@@ -254,7 +254,7 @@
                                 <button type="submit"
                                         class="w-full bg-pharmacy-green hover:bg-pharmacy-green-dark text-white py-4 rounded-lg font-bold text-lg transition-colors shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed"
                                         {% if not cart %}disabled{% endif %}>
-                                    ✅ Finalizar Venda
+                                     Finalizar Venda
                                 </button>
                             </form>
                             <form method="POST" action="{% url 'cancelar_venda' %}">
@@ -262,7 +262,7 @@
                                 <button type="submit"
                                         class="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg font-medium transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                                         {% if not cart %}disabled{% endif %}>
-                                    ❌ Cancelar Venda
+                                     Cancelar Venda
                                 </button>
                             </form>
                         </div>
