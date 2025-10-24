@@ -30,7 +30,7 @@
                                         {% for produto in produtos %}
                                             <!-- ✅ CORREÇÃO: Verificar se produto tem nome -->
                                             {% if produto.nome %}
-                                            <option value="{{ produto.id }}" 
+                                            <option value="{{ produto.id }}"
                                                     data-preco-venda="{{ produto.preco_venda|default:0 }}"
                                                     data-preco-carteira="{{ produto.preco_carteira_calculado|default:0 }}"
                                                     data-carteiras-caixa="{{ produto.carteiras_por_caixa|default:1 }}">
@@ -42,7 +42,7 @@
                                             <option value="">Nenhum produto cadastrado</option>
                                         {% endfor %}
                                     </select>
-                                    
+
                                     <label class="block text-sm font-semibold text-gray-700 mt-4 mb-2">
                                         Unidade
                                     </label>
@@ -57,7 +57,7 @@
                                     <label class="block text-sm font-semibold text-gray-700 mt-4 mb-2">
                                         Quantidade
                                     </label>
-                                    <input type="number" name="quantidade" value="1" min="1" 
+                                    <input type="number" name="quantidade" value="1" min="1"
                                            class="w-full px-4 py-3 border border-pharmacy-gray rounded-lg focus:ring-2 focus:ring-pharmacy-green focus:border-transparent transition-all text-lg"
                                            required>
 

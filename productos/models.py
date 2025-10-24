@@ -98,16 +98,17 @@ class Produto(models.Model):
         lote = self.lote_set.filter(data_validade__gte=date.today()).order_by("data_validade").first()
         return lote.data_validade if lote else None
 
+    # CORREÇÃO - No modelo Produto, substitua o método:
     def preco_carteira_calculado(self):
-        """Se o preço da carteira não for definido manualmente, calcula a partir do preço da caixa"""
-        from decimal import Decimal, ROUND_CEILING
+        """Calcula o preço da carteira se não estiver definido"""
         if self.preco_carteira:
             return self.preco_carteira
-        if self.preco_venda and self.carteiras_por_caixa > 0:
-            return (self.preco_venda / self.carteiras_por_caixa).quantize(
-                Decimal("1."), rounding=ROUND_CEILING
-            )
-        return None
+        elif self.preco_venda and self.carteiras_por_caixa and self.carteiras_por_caixa > 0:
+            preco_venda_decimal = Decimal(str(self.preco_venda))
+            carteiras_decimal = Decimal(str(self.carteiras_por_caixa))
+            return (preco_venda_decimal / carteiras_decimal).quantize(Decimal("0.01"))
+        else:
+            return Decimal('0.00')
 
     def save(self, *args, **kwargs):
         # Só calcula se preco_carteira não estiver definido

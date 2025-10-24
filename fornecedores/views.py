@@ -61,7 +61,7 @@ def cadastrar_fornecedor(request):
         print(fornecedor)
         fornecedor.save()
 
-        return redirect("listar_fornecedores")
+        redirect('listar_fornecedores')
 
     return render(request, "fornecedores/novo_fornecedor.html")
 
@@ -83,7 +83,7 @@ def editar_fornecedor(request, fornecedor_id):
 
         fornecedor.save()
         messages.success(request, "Fornecedor atualizado com sucesso!")
-        return redirect("lista_fornecedores")
+        return redirect("listar_fornecedores")
 
     context = {
         "fornecedor": fornecedor

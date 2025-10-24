@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     "vendas.apps.VendasConfig",
     "productos.apps.ProductosConfig",
     "fornecedores.apps.FornecedoresConfig",
-    "usuarios.apps.UsuariosConfig"
+    "usuarios.apps.UsuariosConfig",
+    'relatorios.apps.RelatoriosConfig'
 ]
 
 # ==========================
@@ -87,10 +88,33 @@ DATABASES = {
     #     default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
     # )
 }
-POSTGRES_LOCALLY = True
-if not DEBUG or POSTGRES_LOCALLY:
-    DATABASES['default'] = dj_database_url.parse(
-        'postgresql://postgres:aasiGbCkQfTCRDfiMXdyQdNfXGHYynTw@maglev.proxy.rlwy.net:41864/railway')
+# POSTGRES_LOCALLY = False
+# if not DEBUG or POSTGRES_LOCALLY:
+#     DATABASES['default'] = dj_database_url.parse(
+#         'postgresql://postgres:aasiGbCkQfTCRDfiMXdyQdNfXGHYynTw@maglev.proxy.rlwy.net:41864/railway')
+
+# ==========================
+# DATABASE CONFIGURATION
+# ==========================
+import dj_database_url
+
+POSTGRES_LOCALLY = False  # 🔁 True = Railway / False = Local (SQLite)
+
+if POSTGRES_LOCALLY:
+    print("☁️ Usando banco de dados PostgreSQL (Railway)")
+    DATABASES = {
+        'default': dj_database_url.parse(
+            'postgresql://postgres:aasiGbCkQfTCRDfiMXdyQdNfXGHYynTw@maglev.proxy.rlwy.net:41864/railway'
+        )
+    }
+else:
+    print("💻 Usando banco de dados local (SQLite)")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # ==========================
 # PASSWORD VALIDATION
