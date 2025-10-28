@@ -99,7 +99,7 @@ DATABASES = {
 # ==========================
 import dj_database_url
 
-POSTGRES_LOCALLY = False  # 🔁 True = Railway / False = Local (SQLite)
+POSTGRES_LOCALLY = True  # 🔁 True = Railway / False = Local (SQLite)
 
 if POSTGRES_LOCALLY:
     print("☁️ Usando banco de dados PostgreSQL (Railway)")
