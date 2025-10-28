@@ -16,7 +16,8 @@
                 <div class="lg:col-span-2" id="sale-items-section">
                     <div class="bg-white rounded-xl shadow-sm border border-pharmacy-gray p-6 mb-6"
                          id="barcode-scanner">
-                        <form method="POST" action="{% url 'criar_venda' %}">
+                        <!-- ✅ CORREÇÃO: Formulário Único para adicionar produtos -->
+                        <form method="POST" action="{% url 'criar_venda' %}" id="add-product-form">
                             {% csrf_token %}
                             <div class="flex items-center space-x-4">
                                 <div class="flex-1">
@@ -28,7 +29,6 @@
                                             required>
                                         <option value="" disabled selected>Selecione ou busque um produto</option>
                                         {% for produto in produtos %}
-                                            <!-- ✅ CORREÇÃO: Verificar se produto tem nome -->
                                             {% if produto.nome %}
                                             <option value="{{ produto.id }}"
                                                     data-preco-venda="{{ produto.preco_venda|default:0 }}"
@@ -53,17 +53,15 @@
                                         <option value="carteira" selected>Carteira</option>
                                     </select>
 
-                                    <!-- ✅ ADICIONAR: Campo de quantidade -->
                                     <label class="block text-sm font-semibold text-gray-700 mt-4 mb-2">
                                         Quantidade
                                     </label>
                                     <input type="number" name="quantidade" value="1" min="1"
                                            class="w-full px-4 py-3 border border-pharmacy-gray rounded-lg focus:ring-2 focus:ring-pharmacy-green focus:border-transparent transition-all text-lg"
                                            required>
-
                                 </div>
                                 <button class="bg-pharmacy-green hover:bg-pharmacy-green-dark text-white px-6 py-3 rounded-lg transition-colors font-medium mt-7"
-                                        type="submit">
+                                        type="submit" id="add-product-btn">
                                     Adicionar
                                 </button>
                             </div>
@@ -113,7 +111,6 @@
                                     </thead>
                                     <tbody class="divide-y divide-pharmacy-gray">
                                     {% for produto in cart %}
-                                        <!-- ✅ CORREÇÃO: Verificar se produto tem dados -->
                                         {% if produto.nome and produto.preco_venda is not None %}
                                         <tr>
                                             <td class="px-6 py-4 text-sm text-gray-700">
@@ -125,13 +122,17 @@
                                                 {{ produto.unidade|default:"carteira" }}
                                             </td>
                                             <td class="px-6 py-4 text-center">
+                                                <!-- ✅ CORREÇÃO: Formulário separado para atualizar quantidade -->
                                                 <form method="POST" action="{% url 'atualizar_quantidade' produto.id %}"
                                                       class="flex items-center justify-center space-x-2">
                                                     {% csrf_token %}
                                                     <input type="number" name="quantidade"
                                                            value="{{ produto.quantidade|default:1 }}"
-                                                           min="1" class="w-16 text-center border rounded py-1 px-2"
-                                                           onchange="this.form.submit()">
+                                                           min="1" max="{{ produto.estoque_total|default:999 }}"
+                                                           class="w-16 text-center border rounded py-1 px-2">
+                                                    <button type="submit" class="bg-blue-500 text-white px-2 py-1 rounded text-sm">
+                                                        ↆ
+                                                    </button>
                                                 </form>
                                             </td>
                                             <td class="px-6 py-4 text-right text-sm text-gray-700">
@@ -157,7 +158,6 @@
                                             </td>
                                         </tr>
                                         {% else %}
-                                        <!-- ✅ CORREÇÃO: Mostrar produto inválido -->
                                         <tr class="bg-red-50">
                                             <td colspan="6" class="px-6 py-4 text-sm text-red-700 text-center">
                                                 ⚠️ Produto inválido no carrinho (ID: {{ produto.id }})
@@ -219,17 +219,77 @@
                         <div class="mb-6" id="sale-info">
                             <h3 class="text-lg font-semibold text-gray-900 mb-4">Informações da Venda</h3>
 
-                            <!-- Seleção de Cliente -->
+                        <!-- ✅ CORREÇÃO: Seleção de Cliente com Pesquisa Avançada -->
                             <div class="mb-4">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
                                     Cliente
                                 </label>
-                                <select name="cliente" form="form_finalizar_venda" id="cliente-select" class="w-full">
+
+                                <!-- Campo de pesquisa em tempo real -->
+                                <div class="relative mb-2">
+                                    <input type="text"
+                                           id="cliente-search"
+                                           placeholder="Buscar cliente por nome ou telefone..."
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pharmacy-green focus:border-transparent">
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                <!-- Lista de resultados da pesquisa -->
+                                <div id="cliente-results" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                                    <!-- Resultados aparecerão aqui via JavaScript -->
+                                </div>
+
+                                <!-- Select original (agora hidden) -->
+                                <select name="cliente" form="form_finalizar_venda" id="cliente-select" class="w-full hidden">
                                     <option value="">Consumidor não identificado</option>
                                     {% for cliente in clientes %}
-                                        <option value="{{ cliente.id }}">{{ cliente.nome }} - {{ cliente.telefone }}</option>
+                                        <option value="{{ cliente.id }}"
+                                                data-nome="{{ cliente.nome }}"
+                                                data-telefone="{{ cliente.telefone|default:'Sem telefone' }}"
+                                                data-email="{{ cliente.email|default:'' }}"
+                                                data-endereco="{{ cliente.endereco|default:'' }}">
+                                            {{ cliente.nome }} - {{ cliente.telefone|default:"Sem telefone" }}
+                                        </option>
                                     {% endfor %}
                                 </select>
+
+                                <!-- Display do cliente selecionado -->
+                                <div id="cliente-selected" class="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg hidden">
+                                    <div class="flex justify-between items-start">
+                                        <div class="flex-1">
+                                            <div class="font-semibold text-green-900" id="selected-cliente-nome"></div>
+                                            <div class="text-sm text-green-700" id="selected-cliente-info"></div>
+                                        </div>
+                                        <button type="button"
+                                                id="clear-cliente"
+                                                class="text-green-600 hover:text-green-800 text-sm ml-2 flex-shrink-0">
+                                            ✕
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Estado quando nenhum cliente selecionado -->
+                                <div id="cliente-none" class="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                                    <div class="text-sm text-gray-600 text-center">
+                                        Nenhum cliente selecionado
+                                    </div>
+                                </div>
+
+                                <!-- Botão para adicionar novo cliente -->
+                                <div class="mt-3">
+                                    <a href="{% url 'criar_cliente' %}"
+                                       target="_blank"
+                                       class="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 py-2 px-3 rounded-lg text-sm font-medium border border-blue-200 transition-colors flex items-center justify-center">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                        </svg>
+                                        Adicionar Novo Cliente
+                                    </a>
+                                </div>
                             </div>
 
                             <!-- Seleção de Método de Pagamento -->
@@ -272,32 +332,234 @@
         </div>
     </div>
 
+    <!-- ✅ CORREÇÃO: Script para pesquisa de clientes -->
     <script>
-        $(document).ready(function () {
-            $('#cliente-select').select2({
-                placeholder: 'Selecione ou busque um cliente',
-                allowClear: true,
-                width: '100%'
+    document.addEventListener('DOMContentLoaded', function() {
+        // Elementos do DOM
+        const clienteSearch = document.getElementById('cliente-search');
+        const clienteResults = document.getElementById('cliente-results');
+        const clienteSelect = document.getElementById('cliente-select');
+        const clienteSelected = document.getElementById('cliente-selected');
+        const clienteNone = document.getElementById('cliente-none');
+        const clearCliente = document.getElementById('clear-cliente');
+
+        // Opções de clientes do select
+        const clientesOptions = Array.from(clienteSelect.options).slice(1); // Remove a primeira opção vazia
+
+        // Função para pesquisar clientes
+        function pesquisarClientes(termo) {
+            const termoLower = termo.toLowerCase().trim();
+
+            if (termoLower.length < 2) {
+                clienteResults.classList.add('hidden');
+                return;
+            }
+
+            const resultados = clientesOptions.filter(option => {
+                const nome = option.dataset.nome.toLowerCase();
+                const telefone = option.dataset.telefone.toLowerCase();
+                const email = option.dataset.email.toLowerCase();
+
+                return nome.includes(termoLower) ||
+                       telefone.includes(termoLower) ||
+                       email.includes(termoLower);
             });
 
-            $('#produto-select').select2({
-                placeholder: 'Selecione ou busque um produto',
-                allowClear: true,
-                width: '100%'
-            });
+            exibirResultados(resultados);
+        }
 
-            // ✅ DEBUG: Log dos produtos disponíveis
-            console.log("📦 Produtos disponíveis:", {{ productos|length }});
-            {% for produto in productos %}
-                console.log("   - {{ produto.nome }}: {{ produto.preco_venda|default:"SEM PREÇO" }}");
-            {% endfor %}
+        // Função para exibir resultados
+        function exibirResultados(resultados) {
+            clienteResults.innerHTML = '';
 
-            // ✅ DEBUG: Log do carrinho
-            console.log("🛒 Carrinho atual:", {{ cart|length }});
-            {% for item in cart %}
-                console.log("   - {{ item.nome|default:"SEM NOME" }}: {{ item.preco_venda|default:"SEM PREÇO" }}");
-            {% endfor %}
+            if (resultados.length === 0) {
+                clienteResults.innerHTML = `
+                    <div class="p-3 text-sm text-gray-500 text-center">
+                        Nenhum cliente encontrado
+                    </div>
+                `;
+            } else {
+                resultados.forEach(option => {
+                    const div = document.createElement('div');
+                    div.className = 'p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer cliente-result-item';
+                    div.dataset.clienteId = option.value;
+                    div.dataset.clienteNome = option.dataset.nome;
+                    div.dataset.clienteTelefone = option.dataset.telefone;
+                    div.dataset.clienteEmail = option.dataset.email;
+
+                    let infoHTML = `<div class="font-medium text-gray-900">${option.dataset.nome}</div>`;
+                    if (option.dataset.telefone && option.dataset.telefone !== 'Sem telefone') {
+                        infoHTML += `<div class="text-sm text-gray-600">📞 ${option.dataset.telefone}</div>`;
+                    }
+                    if (option.dataset.email) {
+                        infoHTML += `<div class="text-sm text-gray-600">✉️ ${option.dataset.email}</div>`;
+                    }
+
+                    div.innerHTML = infoHTML;
+                    clienteResults.appendChild(div);
+                });
+            }
+
+            clienteResults.classList.remove('hidden');
+        }
+
+        // Função para selecionar cliente
+        function selecionarCliente(clienteId, clienteNome, clienteTelefone, clienteEmail) {
+            // Atualizar select hidden
+            clienteSelect.value = clienteId;
+
+            // Atualizar display
+            document.getElementById('selected-cliente-nome').textContent = clienteNome;
+
+            let infoText = '';
+            if (clienteTelefone && clienteTelefone !== 'Sem telefone') {
+                infoText += `📞 ${clienteTelefone}`;
+            }
+            if (clienteEmail) {
+                infoText += infoText ? ` | ✉️ ${clienteEmail}` : `✉️ ${clienteEmail}`;
+            }
+            document.getElementById('selected-cliente-info').textContent = infoText || 'Cliente sem informações de contacto';
+
+            // Mostrar/ocultar elementos
+            clienteSelected.classList.remove('hidden');
+            clienteNone.classList.add('hidden');
+            clienteSearch.value = '';
+            clienteResults.classList.add('hidden');
+
+            console.log(`✅ Cliente selecionado: ${clienteNome} (ID: ${clienteId})`);
+        }
+
+        // Função para limpar seleção
+        function limparSelecaoCliente() {
+            clienteSelect.value = '';
+            clienteSelected.classList.add('hidden');
+            clienteNone.classList.remove('hidden');
+            clienteSearch.value = '';
+            clienteResults.classList.add('hidden');
+        }
+
+        // Event Listeners
+        clienteSearch.addEventListener('input', function() {
+            pesquisarClientes(this.value);
         });
+
+        clienteSearch.addEventListener('focus', function() {
+            if (this.value.length >= 2) {
+                pesquisarClientes(this.value);
+            }
+        });
+
+        // Fechar resultados ao clicar fora
+        document.addEventListener('click', function(e) {
+            if (!clienteSearch.contains(e.target) && !clienteResults.contains(e.target)) {
+                clienteResults.classList.add('hidden');
+            }
+        });
+
+        // Selecionar cliente ao clicar nos resultados
+        clienteResults.addEventListener('click', function(e) {
+            const resultItem = e.target.closest('.cliente-result-item');
+            if (resultItem) {
+                selecionarCliente(
+                    resultItem.dataset.clienteId,
+                    resultItem.dataset.clienteNome,
+                    resultItem.dataset.clienteTelefone,
+                    resultItem.dataset.clienteEmail
+                );
+            }
+        });
+
+        // Limpar seleção
+        clearCliente.addEventListener('click', limparSelecaoCliente);
+
+        // Tecla Escape para limpar pesquisa
+        clienteSearch.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                this.value = '';
+                clienteResults.classList.add('hidden');
+            }
+        });
+
+        // Inicializar estado
+        if (clienteSelect.value) {
+            // Se já houver um cliente selecionado, mostrar informações
+            const selectedOption = clienteSelect.options[clienteSelect.selectedIndex];
+            if (selectedOption.value) {
+                selecionarCliente(
+                    selectedOption.value,
+                    selectedOption.dataset.nome,
+                    selectedOption.dataset.telefone,
+                    selectedOption.dataset.email
+                );
+            }
+        } else {
+            limparSelecaoCliente();
+        }
+
+        // ✅ Código anterior para prevenir duplo clique (mantido)
+        let isAdding = false;
+        const addProductForm = document.getElementById('add-product-form');
+        const addProductBtn = document.getElementById('add-product-btn');
+
+        if (addProductForm) {
+            addProductForm.addEventListener('submit', function(e) {
+                if (isAdding) {
+                    e.preventDefault();
+                    console.log('⚠️ Já está adicionando produto...');
+                    return;
+                }
+
+                isAdding = true;
+
+                if (addProductBtn) {
+                    addProductBtn.disabled = true;
+                    addProductBtn.innerHTML = 'Adicionando...';
+                }
+
+                setTimeout(() => {
+                    isAdding = false;
+                    if (addProductBtn) {
+                        addProductBtn.disabled = false;
+                        addProductBtn.innerHTML = 'Adicionar';
+                    }
+                }, 3000);
+            });
+        }
+
+        // Debug: Log do carrinho
+        console.log('🔍 Carrinho atual:', {{ cart|length }} + ' itens');
+        {% for produto in cart %}
+        console.log('   - {{ produto.nome }}: {{ produto.quantidade }} unidades');
+        {% endfor %}
+    });
     </script>
+
+    <!-- Estilos adicionais para a pesquisa -->
+    <style>
+    .cliente-result-item {
+        transition: background-color 0.2s ease;
+    }
+
+    .cliente-result-item:hover {
+        background-color: #f9fafb;
+    }
+
+    .cliente-result-item:last-child {
+        border-bottom: none;
+    }
+
+    #cliente-results {
+        z-index: 1000;
+    }
+
+    #cliente-selected {
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    </style>
 
 {% endblock %}

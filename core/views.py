@@ -2,13 +2,14 @@ from django.shortcuts import render
 from django.utils import timezone
 from datetime import timedelta, datetime
 from django.db.models import Sum, Count, Q, F
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 
 from vendas.models import Venda
 from productos.models import Produto, Lote
-
+from core.decorators import admin_required, gerente_required, vendedor_required
 
 @login_required
+@vendedor_required
 def dashboard(request):
     hoje = timezone.now().date()
     inicio_mes = hoje.replace(day=1)

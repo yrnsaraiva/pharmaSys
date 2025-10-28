@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.core.paginator import Paginator
 from django.db import transaction
 from datetime import date
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 import decimal
 # libs para imprimir
 from django.template.loader import render_to_string
@@ -14,9 +14,11 @@ import io
 import base64
 
 from .models import Produto, Venda, ItemVenda, Cliente, Lote
+from core.decorators import admin_required, gerente_required, vendedor_required
 
 
 @login_required
+@vendedor_required
 def listar_vendas(request):
     vendas = Venda.objects.all().order_by('-data_venda')
 
@@ -104,12 +106,10 @@ def imprimir_recibo_imagem(request, venda_id):
 
 
 @login_required
-@login_required
+@vendedor_required
 def criar_venda(request):
     formas_pagamento = Venda.FORMA_PAGAMENTO_CHOICES
     clientes = Cliente.objects.all().order_by('nome')
-
-    # ✅ CORREÇÃO: Mostrar TODOS os produtos primeiro para debug
     productos = Produto.objects.all().order_by('nome')
 
     cart = request.session.get('cart', [])
@@ -119,68 +119,74 @@ def criar_venda(request):
     if request.method == 'POST':
         produto_id = request.POST.get('produto')
         unidade = request.POST.get('unidade', 'carteira')
+        quantidade = int(request.POST.get('quantidade', 1))
+
+        print(f"🔍 DEBUG: Recebendo POST - Produto: {produto_id}, Unidade: {unidade}, Qtd: {quantidade}")
 
         if produto_id:
             try:
                 produto = Produto.objects.get(id=produto_id)
-                print(f"🔍 DEBUG: Produto encontrado - {produto.nome}")  # Debug
-
-                # Verificar estoque total
                 estoque_total = produto.estoque_total()
-                print(f"🔍 DEBUG: Estoque total - {estoque_total}")  # Debug
 
-                # ✅ CORREÇÃO: Criar dicionário manualmente
-                produto_dict = {
-                    'id': produto.id,
-                    'nome': produto.nome,
-                    'categoria_nome': produto.categoria.nome if produto.categoria else 'Sem categoria',
-                    'estoque_total': estoque_total,
-                    'unidade': unidade,
-                    'quantidade': 1,
-                }
+                print(f"🔍 DEBUG: Produto {produto.nome} - Estoque: {estoque_total}")
 
-                # ✅ CORREÇÃO: Cálculo robusto do preço
-                if unidade == 'caixa':
-                    produto_dict['preco_venda'] = float(produto.preco_venda)
-                    print(f"🔍 DEBUG: Preço caixa - {produto.preco_venda}")  # Debug
-                else:  # carteira
-                    preco_carteira = produto.preco_carteira_calculado()
-                    print(f"🔍 DEBUG: Preço carteira calculado - {preco_carteira}")  # Debug
-                    produto_dict['preco_venda'] = float(preco_carteira) if preco_carteira else 0.0
-
-                produto_dict['subtotal'] = produto_dict['preco_venda']
-
-                # Verificar se o produto já está no carrinho
-                produto_existente = None
+                # ✅ CORREÇÃO CRÍTICA: Verificar se produto já está no carrinho ANTES
+                produto_existente_index = None
                 for i, item in enumerate(cart):
-                    if item['id'] == produto_dict['id'] and item.get('unidade') == unidade:
-                        produto_existente = i
+                    if str(item['id']) == str(produto_id) and item.get('unidade') == unidade:
+                        produto_existente_index = i
                         break
 
-                if produto_existente is not None:
-                    # Atualizar quantidade existente
-                    if cart[produto_existente]['quantidade'] + 1 <= estoque_total:
-                        cart[produto_existente]['quantidade'] += 1
-                        cart[produto_existente]['subtotal'] = cart[produto_existente]['preco_venda'] * \
-                                                              cart[produto_existente]['quantidade']
-                        messages.success(request, f'Quantidade de {produto.nome} aumentada!')
+                if produto_existente_index is not None:
+                    # ✅ Produto existe - atualizar quantidade
+                    nova_quantidade = cart[produto_existente_index]['quantidade'] + quantidade
+
+                    if nova_quantidade <= estoque_total:
+                        cart[produto_existente_index]['quantidade'] = nova_quantidade
+                        cart[produto_existente_index]['subtotal'] = cart[produto_existente_index][
+                                                                        'preco_venda'] * nova_quantidade
+                        messages.success(request, f'Quantidade de {produto.nome} atualizada para {nova_quantidade}!')
+                        print(f"🔍 DEBUG: Quantidade atualizada - {nova_quantidade}")
                     else:
                         messages.error(request, f'Estoque insuficiente! Disponível: {estoque_total}')
-                else:
-                    # Adicionar novo produto
-                    cart.append(produto_dict)
-                    messages.success(request, f'Produto {produto.nome} adicionado ao carrinho!')
 
+                else:
+                    # ✅ Produto não existe - adicionar novo
+                    produto_dict = {
+                        'id': produto.id,
+                        'nome': produto.nome,
+                        'categoria_nome': produto.categoria.nome if produto.categoria else 'Sem categoria',
+                        'estoque_total': estoque_total,
+                        'unidade': unidade,
+                        'quantidade': quantidade,
+                    }
+
+                    # Cálculo do preço
+                    if unidade == 'caixa':
+                        produto_dict['preco_venda'] = float(produto.preco_venda)
+                    else:
+                        preco_carteira = produto.preco_carteira_calculado()
+                        produto_dict['preco_venda'] = float(preco_carteira) if preco_carteira else 0.0
+
+                    produto_dict['subtotal'] = produto_dict['preco_venda'] * quantidade
+
+                    if quantidade <= estoque_total:
+                        cart.append(produto_dict)
+                        messages.success(request, f'Produto {produto.nome} adicionado ao carrinho!')
+                        print(f"🔍 DEBUG: Novo produto adicionado - Qtd: {quantidade}")
+                    else:
+                        messages.error(request, f'Estoque insuficiente! Disponível: {estoque_total}')
+
+                # ✅ Salvar carrinho
                 request.session['cart'] = cart
                 request.session.modified = True
-                print(f"🔍 DEBUG: Carrinho atualizado - {len(cart)} itens")  # Debug
+
+                print(f"🔍 DEBUG FINAL: Carrinho com {len(cart)} itens")
 
             except Produto.DoesNotExist:
                 messages.error(request, 'Produto não encontrado!')
-                print("❌ DEBUG: Produto não existe")  # Debug
             except Exception as e:
                 messages.error(request, f'Erro ao adicionar produto: {e}')
-                print(f"❌ DEBUG: Erro geral - {e}")  # Debug
 
             return redirect('criar_venda')
 
@@ -190,9 +196,6 @@ def criar_venda(request):
         subtotal += produto['subtotal']
 
     total = subtotal
-
-    # ✅ CORREÇÃO: Debug no contexto
-    print(f"🔍 DEBUG: Contexto - {len(productos)} produtos, {len(cart)} itens no carrinho")
 
     context = {
         'cart': cart,
@@ -204,7 +207,6 @@ def criar_venda(request):
     }
 
     return render(request, 'vendas/criar_venda.html', context)
-
 
 @login_required
 def finalizar_venda(request):
@@ -331,6 +333,7 @@ def cancelar_venda(request):
 
 
 @login_required
+@admin_required
 def remover_venda(request, venda_id):
     venda = get_object_or_404(Venda, pk=venda_id)
     itens = ItemVenda.objects.filter(venda=venda)
@@ -364,6 +367,7 @@ def remover_venda(request, venda_id):
 
 
 @login_required
+@vendedor_required
 def detalhes_venda(request, venda_id):
     venda = get_object_or_404(Venda, pk=venda_id)
     itens = ItemVenda.objects.filter(venda=venda)

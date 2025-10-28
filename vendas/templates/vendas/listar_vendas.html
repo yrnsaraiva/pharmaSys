@@ -1,14 +1,17 @@
 {% extends 'main.html' %}
+{% load auth_tags %}  <!-- 👈 CARREGA AS TAGS DE AUTENTICAÇÃO -->
+
 {% block content %}
     {% include 'navbar.html' %}
 
     <div id="main-content" class="flex-1 ml-64 p-8">
         <div id="page-header" class="mb-8">
             <h2 class="text-3xl font-bold text-gray-900 mb-2">Vendas</h2>
-            <p class="text-gray-600">Gerencie todas as vendas realizadas na farmácia
-            </p>
+            <p class="text-gray-600">Gerencie todas as vendas realizadas na farmácia</p>
         </div>
+
         <div class="flex justify-between items-center mb-8" id="page-header">
+            <!-- Botão Criar Venda - Todos podem criar -->
             <a class="bg-pharmacy-green hover:bg-pharmacy-green-dark text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm"
                id="add-supplier-btn" href="{% url 'criar_venda' %}">
                 <i class="mr-2" data-fa-i2svg="">
@@ -58,8 +61,22 @@
                                     {% if payment == value %}selected{% endif %}>{{ label }}</option>
                         {% endfor %}
                     </select>
-
                 </div>
+
+                <!-- Filtros Avançados - Apenas para Gerente e Admin -->
+                {% if user|is_admin or user|is_gerente %}
+                <div id="atendente-filter-field" class="lg:col-span-2">
+                    <label for="atendente-filter" class="block text-sm font-medium text-gray-700 mb-2">
+                        Filtro por Atendente
+                    </label>
+                    <select name="atendente" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-600">
+                        <option value="">Todos os atendentes</option>
+                        <!-- Aqui você pode adicionar opções de atendentes se quiser -->
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">Filtro disponível para gerentes e administradores</p>
+                </div>
+                {% endif %}
+
                 <div class="lg:col-span-5 flex space-x-2 mt-2">
                     <button type="submit" class="px-6 py-3 bg-green-600 text-white rounded-lg">
                         <i class="mr-2" data-fa-i2svg="">
@@ -92,7 +109,13 @@
             <div class="px-6 py-4 border-b border-pharmacy-gray">
                 <div class="flex justify-between items-center">
                     <h3 class="text-lg font-semibold text-gray-900">Lista de Vendas</h3>
-                    <span class="text-sm text-gray-500">Vendas realizadas: {{ vendas.count }}</span>
+                    <span class="text-sm text-gray-500">
+                        {% if user|is_admin or user|is_gerente %}
+                            Total de vendas: {{ vendas.count }}
+                        {% else %}
+                            Suas vendas: {{ page_obj.paginator.count }}
+                        {% endif %}
+                    </span>
                 </div>
             </div>
 
@@ -100,53 +123,47 @@
                 <table class="w-full">
                     <thead class="bg-pharmacy-gray-light">
                     <tr>
-                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID
-                            Venda
-                        </th>
-                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data
-                            e Hora
-                        </th>
-                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Cliente
-                        </th>
-                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Total
-                        </th>
-                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Pagamento
-                        </th>
-                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Atendente
-                        </th>
-                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Ações
-                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Venda</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data e Hora</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pagamento</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Atendente</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                     </tr>
                     </thead>
                     <tbody id="orders-tbody" class="bg-white divide-y divide-pharmacy-gray">
                     {% for venda in page_obj %}
                         <tr class="hover:bg-pharmacy-gray-light/50">
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                #{{ venda.id }}</td>
+                                #{{ venda.id }}
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                 <div>{{ venda.data_venda|date:"d/m/Y H:i" }}</div>
-
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ venda.cliente }}
-
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{{ venda.total }}</td>
-
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                    <span class="flex items-center">
-                                        {{ venda.forma_pagamento }}
-                                    </span>
+                                {{ venda.cliente.nome|default:"Consumidor" }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ venda.atendente }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                                {{ venda.total }} MT
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                <span class="flex items-center">
+                                    {{ venda.get_forma_pagamento_display }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                {{ venda.atendente.username }}
+                                {% if venda.atendente == user %}
+                                    <span class="text-xs text-green-600 ml-1">(Você)</span>
+                                {% endif %}
+                            </td>
                             <td class="px-6 py-4 text-center">
                                 <div class="flex justify-center space-x-2">
-                                    <!-- Botão imprimir recibo -->
+                                    <!-- Botão imprimir recibo - Todos podem imprimir -->
                                     <a href="{% url 'imprimir_recibo' venda.id %}" target="_blank"
-                                       class="text-blue-500 hover:text-blue-700">
+                                       class="text-blue-500 hover:text-blue-700"
+                                       title="Imprimir recibo">
                                         <i data-fa-i2svg="">
                                             <svg class="svg-inline--fa fa-print" aria-hidden="true" focusable="false"
                                                  data-prefix="fas" data-icon="print" role="img"
@@ -161,8 +178,11 @@
                                             </svg>
                                         </i>
                                     </a>
+
+                                    <!-- Botão ver detalhes - Todos podem ver -->
                                     <a href="{% url 'detalhes_venda' venda.id %}"
-                                       class="text-pharmacy-green hover:text-pharmacy-green-dark">
+                                       class="text-pharmacy-green hover:text-pharmacy-green-dark"
+                                       title="Ver detalhes da venda">
                                         <i data-fa-i2svg="">
                                             <svg class="svg-inline--fa fa-eye" aria-hidden="true" focusable="false"
                                                  data-prefix="fas" data-icon="eye" role="img"
@@ -173,22 +193,44 @@
                                             </svg>
                                         </i>
                                     </a>
-                                    {#                                    <a href="{% url 'remover_venda' venda.id %}"#}
-                                    {#                                       onclick="return confirm('Tem certeza que deseja remover {{ venda.nome }}?');"#}
-                                    {#                                       class="text-red-500 hover:text-red-700">#}
-                                    {#                                        <i data-fa-i2svg="">#}
-                                    {#                                            <svg aria-hidden="true" class="svg-inline--fa fa-trash"#}
-                                    {#                                                 data-icon="trash" data-prefix="fas" viewBox="0 0 448 512"#}
-                                    {#                                                 xmlns="http://www.w3.org/2000/svg">#}
-                                    {#                                                <path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0#}
-                                    {#                                                 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8#}
-                                    {#                                                 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416#}
-                                    {#                                                 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3#}
-                                    {#                                                 0 46.3-19.7 47.9-45L416 128z"#}
-                                    {#                                                      fill="currentColor"></path>#}
-                                    {#                                            </svg>#}
-                                    {#                                        </i>#}
-                                    {#                                    </a>#}
+
+
+
+                                    <!-- Botão excluir venda - Apenas Admin -->
+                                    {% if user|is_admin %}
+                                    <a href="{% url 'remover_venda' venda.id %}"
+                                       onclick="return confirm('Tem certeza que deseja EXCLUIR permanentemente a venda #{{ venda.id }}? Esta ação não pode ser desfeita.');"
+                                       class="text-red-500 hover:text-red-700"
+                                       title="Excluir venda permanentemente">
+                                        <i data-fa-i2svg="">
+                                            <svg aria-hidden="true" class="svg-inline--fa fa-trash"
+                                                 data-icon="trash" data-prefix="fas" viewBox="0 0 448 512"
+                                                 xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0
+                                                 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8
+                                                 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416
+                                                 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3
+                                                 0 46.3-19.7 47.9-45L416 128z"
+                                                      fill="currentColor"></path>
+                                            </svg>
+                                        </i>
+                                    </a>
+                                    {% else %}
+                                    <span class="text-gray-300 cursor-not-allowed" title="Apenas administradores podem excluir vendas">
+                                        <i data-fa-i2svg="">
+                                            <svg aria-hidden="true" class="svg-inline--fa fa-trash"
+                                                 data-icon="trash" data-prefix="fas" viewBox="0 0 448 512"
+                                                 xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0
+                                                 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8
+                                                 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416
+                                                 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3
+                                                 0 46.3-19.7 47.9-45L416 128z"
+                                                      fill="currentColor"></path>
+                                            </svg>
+                                        </i>
+                                    </span>
+                                    {% endif %}
                                 </div>
                             </td>
                         </tr>
@@ -199,10 +241,9 @@
                     {% endfor %}
                     </tbody>
                 </table>
-
             </div>
-
         </div>
+
         <!-- Paginação -->
         <div class="flex justify-between items-center mt-6" id="pagination">
             <div class="text-sm text-gray-700">
@@ -211,10 +252,15 @@
                 a
                 <span class="font-medium">{{ page_obj.end_index }}</span>
                 de
-                <span class="font-medium">{{ page_obj.paginator.count }}</span> vendas
+                <span class="font-medium">{{ page_obj.paginator.count }}</span>
+                {% if user|is_admin or user|is_gerente %}
+                    vendas
+                {% else %}
+                    suas vendas
+                {% endif %}
             </div>
 
-            <!-- Botões -->
+            <!-- Botões de paginação -->
             <div class="flex space-x-1">
                 {% if page_obj.has_previous %}
                     <a href="?page={{ page_obj.previous_page_number }}"
@@ -254,8 +300,4 @@
             </div>
         </div>
     </div>
-
-
-
-
 {% endblock %}

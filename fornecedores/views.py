@@ -2,11 +2,13 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .models import Fornecedor
 from django.core.paginator import Paginator
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
+from core.decorators import admin_required, gerente_required, vendedor_required
 
 
 # Listar fornecedores
 @login_required
+@gerente_required
 def fornecedores_list(request):
     # Obtém todos os fornecedores
     fornecedores = Fornecedor.objects.all()
@@ -40,6 +42,7 @@ def fornecedores_list(request):
 
 # Criar fornecedor
 @login_required
+@gerente_required
 def cadastrar_fornecedor(request):
     if request.method == "POST":
         nome_empresa = request.POST.get("company-name")
@@ -68,6 +71,7 @@ def cadastrar_fornecedor(request):
 
 # Editar fornecedor
 @login_required
+@gerente_required
 def editar_fornecedor(request, fornecedor_id):
     fornecedor = get_object_or_404(Fornecedor, id=fornecedor_id)
 
@@ -93,6 +97,7 @@ def editar_fornecedor(request, fornecedor_id):
 
 # Excluir fornecedor
 @login_required
+@admin_required
 def remover_fornecedor(request, fornecedor_id):
     fornecedor = get_object_or_404(Fornecedor, pk=fornecedor_id)
     fornecedor.delete()

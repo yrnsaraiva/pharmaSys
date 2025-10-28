@@ -1,3 +1,5 @@
+{% load auth_tags %}
+
 <div class="bg-white shadow-sm border-b border-pharmacy-gray fixed w-full z-40" id="header" role="banner">
     <div class="flex justify-between items-center h-16 px-6">
         <!-- Logo -->
@@ -28,14 +30,15 @@
                 <div class="text-right">
                     <p class="text-sm font-medium text-gray-800">{{ request.user.username }}</p>
                     <p class="text-xs text-gray-500">
-                        {% if request.user.is_superuser %}
-                            Superusuário
-                        {% elif request.user.is_staff %}
-                            Staff
-                        {% elif request.user.is_active %}
-                            Usuário ativo
+                        {% user_level user as nivel %}
+                        {% if nivel == 'admin' %}
+                             Administrador
+                        {% elif nivel == 'gerente' %}
+                             Gerente
+                        {% elif nivel == 'vendedor' %}
+                             Vendedor
                         {% else %}
-                            Inativo
+                            Usuário
                         {% endif %}
                     </p>
                 </div>
@@ -63,6 +66,7 @@
             <div class="space-y-2">
                 {% with request.resolver_match.url_name as url_name %}
 
+                <!-- Dashboard - Todos podem ver -->
                 <a href="{% url 'dashboard' %}"
                    class="flex items-center px-4 py-3 rounded-lg transition-colors {% if url_name == 'dashboard' %}bg-pharmacy-green-light/10 text-pharmacy-green-dark{% else %}text-gray-600 hover:bg-pharmacy-green-light/10 hover:text-pharmacy-green-dark{% endif %}">
                     <svg class="w-5 h-5 mr-3" aria-hidden="true" focusable="false" role="img" viewBox="0 0 512 512">
@@ -71,6 +75,7 @@
                     Dashboard
                 </a>
 
+                <!-- Produtos - Todos podem ver -->
                 <a href="{% url 'productos_list' %}"
                    class="flex items-center px-4 py-3 rounded-lg transition-colors {% if url_name == 'productos_list' %}bg-pharmacy-green-light/10 text-pharmacy-green-dark{% else %}text-gray-600 hover:bg-pharmacy-green-light/10 hover:text-pharmacy-green-dark{% endif %}">
                     <svg class="w-5 h-5 mr-3" aria-hidden="true" focusable="false" role="img" viewBox="0 0 576 512">
@@ -79,6 +84,8 @@
                     Produtos
                 </a>
 
+                <!-- Fornecedores - Apenas Gerente e Admin -->
+                {% if user|is_admin or user|is_gerente %}
                 <a href="{% url 'listar_fornecedores' %}"
                    class="flex items-center px-4 py-3 rounded-lg transition-colors {% if url_name == 'listar_fornecedores' %}bg-pharmacy-green-light/10 text-pharmacy-green-dark{% else %}text-gray-600 hover:bg-pharmacy-green-light/10 hover:text-pharmacy-green-dark{% endif %}">
                     <svg class="w-5 h-5 mr-3" aria-hidden="true" focusable="false" role="img" viewBox="0 0 640 512">
@@ -86,7 +93,9 @@
                     </svg>
                     Fornecedores
                 </a>
+                {% endif %}
 
+                <!-- Vendas - Todos podem ver -->
                 <a href="{% url 'listar_vendas' %}"
                    class="flex items-center px-4 py-3 rounded-lg transition-colors {% if url_name == 'listar_vendas' %}bg-pharmacy-green-light/10 text-pharmacy-green-dark{% else %}text-gray-600 hover:bg-pharmacy-green-light/10 hover:text-pharmacy-green-dark{% endif %}">
                     <svg class="w-5 h-5 mr-3" aria-hidden="true" focusable="false" role="img" viewBox="0 0 512 512">
@@ -95,6 +104,8 @@
                     Vendas
                 </a>
 
+                <!-- Clientes - Apenas Gerente e Admin -->
+                {% if user|is_admin or user|is_vendedor %}
                 <a href="{% url 'listar_cliente' %}"
                    class="flex items-center px-4 py-3 rounded-lg transition-colors {% if url_name == 'listar_cliente' %}bg-pharmacy-green-light/10 text-pharmacy-green-dark{% else %}text-gray-600 hover:bg-pharmacy-green-light/10 hover:text-pharmacy-green-dark{% endif %}">
                     <svg class="w-5 h-5 mr-3" aria-hidden="true" focusable="false" role="img" viewBox="0 0 640 512">
@@ -102,7 +113,10 @@
                     </svg>
                     Clientes
                 </a>
+                {% endif %}
 
+                <!-- Relatórios - Apenas Gerente e Admin -->
+                {% if user|is_admin or user|is_gerente %}
                 <a href="{% url 'relatorios_avancados' %}"
                    class="flex items-center px-4 py-3 rounded-lg cursor-pointer
                           {% if request.resolver_match.url_name == 'relatorios_avancados' %}
@@ -115,6 +129,8 @@
                     </svg>
                     Relatórios
                 </a>
+                {% endif %}
+
 
 
                 {% endwith %}

@@ -3,12 +3,18 @@ from .models import Produto, Categoria, Fornecedor, Lote
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Q
-
+from django.contrib.auth.decorators import login_required
+from core.decorators import admin_required, gerente_required, vendedor_required, permission_required
 
 # Listar categorias
+
+
+
+
 @login_required
+@gerente_required
 def categorias_list(request):
     categorias = Categoria.objects.all().order_by('nome')
 
@@ -38,6 +44,7 @@ def categorias_list(request):
 
 
 @login_required
+@gerente_required
 def criar_categoria(request):
     if request.method == "POST":
         nome = request.POST.get("nome")
@@ -59,6 +66,7 @@ def criar_categoria(request):
 
 # Excluir categoria
 @login_required
+@gerente_required
 def remover_categoria(request, categoria_id):
     categoria = get_object_or_404(Categoria, pk=categoria_id)
     categoria.delete()
@@ -67,6 +75,7 @@ def remover_categoria(request, categoria_id):
 
 # Listar productos
 @login_required
+@vendedor_required
 def productos_list(request):
     # Obtém todos os productos
     productos = Produto.objects.all().order_by('nome')
@@ -120,6 +129,7 @@ def productos_list(request):
 
 
 @login_required
+@gerente_required
 def cadastrar_producto(request):
     categorias = Categoria.objects.all()
     fornecedores = Fornecedor.objects.all()
@@ -177,13 +187,14 @@ def cadastrar_producto(request):
 
 # Excluir producto
 @login_required
+@admin_required
 def remover_producto(request, producto_id):
     producto = get_object_or_404(Produto, pk=producto_id)
     producto.delete()
     return redirect("productos_list")
 
-
 @login_required
+@admin_required
 def editar_producto(request, producto_id):
     producto = get_object_or_404(Produto, pk=producto_id)
     categorias = Categoria.objects.all()
@@ -227,6 +238,7 @@ def editar_producto(request, producto_id):
 
 
 @login_required
+@gerente_required  # 👈 Apenas Admin e Gerente
 def listar_lotes(request):
     search = request.GET.get("search", "")
     lotes = Lote.objects.select_related("produto").all()
@@ -256,6 +268,7 @@ def listar_lotes(request):
 
 
 @login_required
+@gerente_required  # 👈 Apenas Admin e Gerente
 def criar_lote(request):
     if request.method == "POST":
         produto_id = request.POST.get("produto")
@@ -291,6 +304,7 @@ def criar_lote(request):
 
 
 @login_required
+@gerente_required  # 👈 Apenas Admin e Gerente
 def remover_lote(request, pk):
     lote = get_object_or_404(Lote, pk=pk)
     lote.delete()

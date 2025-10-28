@@ -1,15 +1,18 @@
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from pyexpat.errors import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Sum, Count
 
 from .models import Cliente
 from vendas.models import ItemVenda, Venda
-
+from core.decorators import admin_required, gerente_required, vendedor_required
 
 # ---------- CRIAR CLIENTE ----------
+
+
 @login_required
+@vendedor_required
 def criar_cliente(request):
     if request.method == "POST":
         nome_cliente = request.POST.get('nome')
@@ -33,7 +36,9 @@ def criar_cliente(request):
 
 
 # ---------- LISTAR CLIENTES ----------
+
 @login_required
+@vendedor_required
 def listar_cliente(request):
     # Obtém todos os fornecedores
     cliente = Cliente.objects.all()
@@ -65,7 +70,9 @@ def listar_cliente(request):
 
 
 # ---------- EDITAR CLIENTE ----------
+
 @login_required
+@vendedor_required
 def editar_cliente(request, cliente_id):
     cliente = get_object_or_404(Cliente, id=cliente_id)
 
@@ -85,36 +92,47 @@ def editar_cliente(request, cliente_id):
 
 
 @login_required
+@admin_required
 def deletar_cliente(request, cliente_id):
     cliente = get_object_or_404(Cliente, pk=cliente_id)
     cliente.delete()
     return redirect("listar_cliente")
 
-
-@login_required
+from django.shortcuts import render, get_object_or_404
+from django.db.models import Sum, F
+from vendas.models import Venda, ItemVenda
+from clientes.models import Cliente
+@vendedor_required
 def detalhes_cliente(request, cliente_id):
-    cliente = get_object_or_404(Cliente, pk=cliente_id)
+    cliente = get_object_or_404(Cliente, id=cliente_id)
 
-    # Estatísticas
-    vendas = Venda.objects.filter(cliente=cliente)
+    # 🔹 Todas as vendas do cliente
+    vendas = Venda.objects.filter(cliente=cliente).order_by('-data_venda')
+
+    # 🔹 Estatísticas
     total_compras = vendas.count()
-    total_gasto = vendas.aggregate(Sum('total'))['total__sum'] or 0
-    ultima_compra = vendas.order_by('-data_venda').first()
+    total_gasto = vendas.aggregate(total=Sum('total'))['total'] or 0
+    ultima_compra = vendas.first()
 
-    # Produtos mais comprados
+    # 🔹 Produtos mais comprados por esse cliente
     produtos_populares = (
-        ItemVenda.objects.filter(venda__cliente=cliente)
+        ItemVenda.objects
+        .filter(venda__cliente=cliente)
         .values('produto__nome')
-        .annotate(qtd=Sum('quantidade'))
-        .order_by('-qtd')[:5]
+        .annotate(
+            qtd_total=Sum('quantidade'),
+            total_gasto=Sum(F('quantidade') * F('preco_unitario'))
+        )
+        .order_by('-qtd_total')[:5]
     )
 
     context = {
         'cliente': cliente,
+        'vendas': vendas,
         'total_compras': total_compras,
         'total_gasto': total_gasto,
         'ultima_compra': ultima_compra,
         'produtos_populares': produtos_populares,
-        'vendas': vendas[:10],  # últimas 10 compras
     }
+
     return render(request, 'clientes/detalhes_clientes.html', context)
