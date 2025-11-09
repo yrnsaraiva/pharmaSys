@@ -1,7 +1,7 @@
 {% extends 'main.html' %}
+{% load auth_tags %}  <!-- 👈 CARREGA AS TAGS DE AUTENTICAÇÃO -->
 
 {% block content %}
-
     {% include 'navbar.html' %}
 
     <div class="flex-1 ml-64 p-8" id="main-content">
@@ -10,6 +10,9 @@
                 <h2 class="text-xl font-bold text-gray-900 mb-2">Gestão de Lotes</h2>
                 <p class="text-gray-600">Gerencie os lotes de medicamentos e produtos</p>
             </div>
+
+            <!-- Botão Adicionar Lote - Apenas Gerente e Admin -->
+            {% if user|is_admin or user|is_gerente %}
             <a class="bg-pharmacy-green hover:bg-pharmacy-green-dark text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm"
                href="{% url 'cadastrar_lote' %}">
                 <i class="mr-2">
@@ -27,6 +30,26 @@
                 </i>
                 Adicionar Lote
             </a>
+            {% else %}
+            <!-- Botão desabilitado para Vendedor -->
+            <button class="bg-gray-300 text-gray-500 px-6 py-3 rounded-lg font-medium shadow-sm cursor-not-allowed"
+                    title="Apenas gerentes e administradores podem adicionar lotes">
+                <i class="mr-2">
+                    <svg aria-hidden="true" class="svg-inline--fa fa-plus" viewBox="0 0 448 512"
+                         xmlns="http://www.w3.org/2000/svg">
+                        <path d="M256 80c0-17.7-14.3-32-32-32s-32
+                        14.3-32 32V224H48c-17.7 0-32
+                        14.3-32 32s14.3 32 32
+                        32H192V432c0 17.7 14.3
+                        32 32 32s32-14.3
+                        32-32V288H400c17.7 0
+                        32-14.3 32-32s-14.3-32-32-32H256V80z"
+                              fill="currentColor"></path>
+                    </svg>
+                </i>
+                Adicionar Lote
+            </button>
+            {% endif %}
         </div>
 
         <!-- Filtro -->
@@ -57,6 +80,7 @@
                         <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Qnt.</th>
                         <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Validade</th>
                         <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Fabricação</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
                         <th class="px-6 py-4 text-center text-sm font-semibold text-gray-900">Ações</th>
                     </tr>
                     </thead>
@@ -64,16 +88,45 @@
                     {% for lote in page_obj %}
                         <tr class="hover:bg-pharmacy-gray-light/50 transition-colors">
                             <td class="px-6 py-4 font-medium text-gray-900">{{ lote.produto.nome }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-700">{{ lote.numero_lote }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-700">{{ lote.nr_caixas }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-700">{{ lote.quantidade_disponivel }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-700">{{ lote.data_validade|date:"d/m/Y"|default:"—" }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-700">{{ lote.data_fabricacao|date:"d/m/Y"|default:"—" }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-700 font-mono">{{ lote.numero_lote }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-700 text-center">{{ lote.nr_caixas }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-700 text-center">{{ lote.quantidade_disponivel }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-700">
+                                {% if lote.data_validade %}
+                                    {{ lote.data_validade|date:"d/m/Y" }}
+                                    {% now "Y-m-d" as today %}
+                                    {% if lote.data_validade|date:"Y-m-d" <= today %}
+                                        <span class="text-red-600 text-xs block">⚠️ Vencido</span>
+                                    {% elif lote.data_validade|date:"Y-m-d" <= today|add:"30 days" %}
+                                        <span class="text-orange-500 text-xs block">⚠️ Próximo</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-gray-400">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-700">
+                                {{ lote.data_fabricacao|date:"d/m/Y"|default:"—" }}
+                            </td>
+                            <td class="px-6 py-4">
+                                {% if lote.quantidade_disponivel == 0 %}
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        Esgotado
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        Disponível
+                                    </span>
+                                {% endif %}
+                            </td>
                             <td class="px-6 py-4 text-center">
                                 <div class="flex justify-center space-x-2">
+                                   
+                                    <!-- Botão Excluir - Apenas Admin -->
+                                    {% if user|is_admin %}
                                     <a href="{% url 'remover_lote' lote.id %}"
-                                       onclick="return confirm('Tem certeza que deseja remover {{ lote.produto }} - {{ lote.numero_lote }}?');"
-                                       class="text-red-500 hover:text-red-700">
+                                       onclick="return confirm('Tem certeza que deseja remover o lote {{ lote.numero_lote }} do produto {{ lote.produto.nome }}?');"
+                                       class="text-red-500 hover:text-red-700"
+                                       title="Excluir lote">
                                         <i data-fa-i2svg="">
                                             <svg aria-hidden="true" class="svg-inline--fa fa-trash"
                                                  data-icon="trash" data-prefix="fas" viewBox="0 0 448 512"
@@ -87,12 +140,29 @@
                                             </svg>
                                         </i>
                                     </a>
+                                    {% else %}
+                                    <!-- Ícone desabilitado para Gerente e Vendedor -->
+                                    <span class="text-gray-300 cursor-not-allowed" title="Apenas administradores podem excluir lotes">
+                                        <i data-fa-i2svg="">
+                                            <svg aria-hidden="true" class="svg-inline--fa fa-trash"
+                                                 data-icon="trash" data-prefix="fas" viewBox="0 0 448 512"
+                                                 xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0
+                     32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8
+                     296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416
+                     128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3
+                     0 46.3-19.7 47.9-45L416 128z"
+                                                      fill="currentColor"></path>
+                                            </svg>
+                                        </i>
+                                    </span>
+                                    {% endif %}
                                 </div>
                             </td>
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                            <td colspan="8" class="px-6 py-4 text-center text-gray-500">
                                 Nenhum lote encontrado.
                             </td>
                         </tr>
