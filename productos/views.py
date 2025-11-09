@@ -309,3 +309,4 @@ def remover_lote(request, pk):
     lote = get_object_or_404(Lote, pk=pk)
     lote.delete()
     return redirect("listar_lotes")
+
