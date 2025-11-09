@@ -22,26 +22,33 @@
                             <div class="flex items-center space-x-4">
                                 <div class="flex-1">
                                     <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                        Código de Barras / Buscar Produto
+                                        Produtos
                                     </label>
-                                    <select name="produto" id="produto-select"
-                                            class="w-full px-4 py-5 border border-pharmacy-gray rounded-lg focus:ring-2 focus:ring-pharmacy-green focus:border-transparent transition-all text-lg"
-                                            required>
-                                        <option value="" disabled selected>Selecione ou busque um produto</option>
-                                        {% for produto in produtos %}
-                                            {% if produto.nome %}
-                                            <option value="{{ produto.id }}"
-                                                    data-preco-venda="{{ produto.preco_venda|default:0 }}"
-                                                    data-preco-carteira="{{ produto.preco_carteira_calculado|default:0 }}"
-                                                    data-carteiras-caixa="{{ produto.carteiras_por_caixa|default:1 }}">
-                                                {{ produto.nome }} - {{ produto.codigo_barras|default:"Sem código" }}
-                                                (Estoque: {{ produto.estoque_total|default:0 }})
-                                            </option>
-                                            {% endif %}
-                                        {% empty %}
-                                            <option value="">Nenhum produto cadastrado</option>
-                                        {% endfor %}
-                                    </select>
+                                    <div class="relative">
+                                        <select name="produto" id="produto-select"
+                                                class="w-full px-4 py-5 border border-pharmacy-gray rounded-lg focus:ring-2 focus:ring-pharmacy-green focus:border-transparent transition-all text-lg"
+                                                required>
+                                            <option value="" disabled selected>Selecione ou busque um produto</option>
+                                            {% for produto in produtos %}
+                                                {% if produto.nome %}
+                                                <option value="{{ produto.id }}"
+                                                        data-preco-venda="{{ produto.preco_venda|default:0 }}"
+                                                        data-preco-carteira="{{ produto.preco_carteira_calculado|default:0 }}"
+                                                        data-carteiras-caixa="{{ produto.carteiras_por_caixa|default:1 }}">
+                                                    {{ produto.nome }} - {{ produto.codigo_barras|default:"Sem código" }}
+                                                    (Estoque: {{ produto.estoque_total|default:0 }})
+                                                </option>
+                                                {% endif %}
+                                            {% empty %}
+                                                <option value="">Nenhum produto cadastrado</option>
+                                            {% endfor %}
+                                        </select>
+                                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
 
                                     <label class="block text-sm font-semibold text-gray-700 mt-4 mb-2">
                                         Unidade
@@ -531,6 +538,12 @@
         {% for produto in cart %}
         console.log('   - {{ produto.nome }}: {{ produto.quantidade }} unidades');
         {% endfor %}
+    });
+    $(document).ready(function () {
+        $('#produto-select').select2({
+            placeholder: 'Selecione ou busque um produto',
+            allowClear: true
+        });
     });
     </script>
 
