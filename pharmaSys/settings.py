@@ -28,8 +28,8 @@ SESSION_SAVE_EVERY_REQUEST = True
 
 # ==========================
 # INSTALLED APPS
-# ==========================
 INSTALLED_APPS = [
+    'unfold',
     'django.contrib.admin',
     'django.contrib.humanize',
     'django.contrib.auth',
@@ -46,6 +46,16 @@ INSTALLED_APPS = [
     "usuarios.apps.UsuariosConfig",
     'relatorios.apps.RelatoriosConfig'
 ]
+UNFOLD = {
+    "SITE_HEADER": "PharmaSys",
+    "SITE_TITLE": "Administração",
+    "SITE_SYMBOL": "💊",
+    "DARK_MODE": True,
+    "COLORS": {
+        "primary": "indigo",
+        "accent": "emerald",
+    },
+}
 
 # ==========================
 # MIDDLEWARE
