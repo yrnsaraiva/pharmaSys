@@ -29,6 +29,7 @@ SESSION_SAVE_EVERY_REQUEST = True
 # ==========================
 # INSTALLED APPS
 INSTALLED_APPS = [
+    'import_export',
     'django.contrib.admin',
     'django.contrib.humanize',
     'django.contrib.auth',
@@ -45,7 +46,12 @@ INSTALLED_APPS = [
     "usuarios.apps.UsuariosConfig",
     'relatorios.apps.RelatoriosConfig'
 ]
-
+# ==========================
+# DJANGO IMPORT-EXPORT CONFIG
+# ==========================
+IMPORT_EXPORT_USE_TRANSACTIONS = True  # Usar transações para imports (recomendado)
+IMPORT_EXPORT_SKIP_ADMIN_LOG = False   # Manter logs de importação no admin
+IMPORT_EXPORT_IMPORT_PERMISSION = 'add'  # Permissão necessária para importar
 # ==========================
 # MIDDLEWARE
 # ==========================
