@@ -12,20 +12,24 @@
                     <p class="text-gray-600">Controle completo do inventário da farmácia</p>
                 </div>
                 <div class="flex justify-between">
+
+
+
                     <!-- Botão Adicionar Produto - Apenas Gerente e Admin -->
                     {% if user|is_admin or user|is_gerente %}
-                    <a class="bg-pharmacy-green hover:bg-pharmacy-green-dark text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center shadow-lg mx-2"
-                       id="add-product-btn" href="{% url 'cadastrar_producto' %}">
-                        <i class="mr-2" data-fa-i2svg="">
-                            <svg aria-hidden="true" class="svg-inline--fa fa-plus" data-fa-i2svg="" data-icon="plus"
-                                 data-prefix="fas" focusable="false" role="img" viewBox="0 0 448 512"
-                                 xmlns="http://www.w3.org/2000/svg">
-                                <path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"
-                                      fill="currentColor"></path>
-                            </svg>
-                        </i>
-                        Adicionar Produto
-                    </a>
+                    
+                        <a class="bg-pharmacy-green hover:bg-pharmacy-green-dark text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center shadow-lg mx-2"
+                           id="add-product-btn" href="{% url 'cadastrar_producto' %}">
+                            <i class="mr-2" data-fa-i2svg="">
+                                <svg aria-hidden="true" class="svg-inline--fa fa-plus" data-fa-i2svg="" data-icon="plus"
+                                     data-prefix="fas" focusable="false" role="img" viewBox="0 0 448 512"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"
+                                          fill="currentColor"></path>
+                                </svg>
+                            </i>
+                            Adicionar Produto
+                        </a>
                     {% else %}
                     <!-- Botão desabilitado para Vendedor -->
                     <button class="bg-gray-300 text-gray-500 px-6 py-3 rounded-xl font-medium flex items-center shadow-lg mx-2 cursor-not-allowed"
@@ -150,7 +154,7 @@
                             Nome do Produto
                         </th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Código de Barras
+                            Quatidade de Caixas
                         </th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                             Categoria
@@ -182,9 +186,9 @@
                                 <div class="text-sm text-gray-500">{{ producto.categoria.nome }}</div>
                             </td>
 
-                            <!-- Código de Barras -->
+                           <!-- Total de Caixas -->
                             <td class="px-6 py-4 font-mono text-sm text-gray-700">
-                                {{ producto.codigo_barras }}
+                                {{ producto.total_nr_caixas }} caixa{{ producto.total_nr_caixas|pluralize }}
                             </td>
 
                             <!-- Tipo de Categoria -->
