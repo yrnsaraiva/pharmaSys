@@ -83,7 +83,12 @@ class Produto(models.Model):
     def estoque_total(self):
         """Soma a quantidade disponível em todos os lotes."""
         return self.lote_set.aggregate(total=Sum("quantidade_disponivel"))["total"] or 0
-
+        
+    def total_nr_caixas(self):
+        """Retorna a soma de nr_caixas de todos os lotes"""
+        return self.lote_set.aggregate(total=Sum('nr_caixas'))['total'] or 0   
+        
+    
     def status_estoque(self):
         """Verifica o status baseado no estoque mínimo"""
         qtd = self.estoque_total()
