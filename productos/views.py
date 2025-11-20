@@ -5,11 +5,6 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from core.decorators import admin_required, gerente_required, vendedor_required
-from reportlab.lib.pagesizes import  A4
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib import colors
-from reportlab.lib.units import inch
 from django.utils import timezone
 from io import BytesIO
 from django.http import HttpResponse
