@@ -12,8 +12,7 @@ urlpatterns = [
     path("lotes/", views.listar_lotes, name="listar_lotes"),
     path("lote/criar/", views.criar_lote, name="cadastrar_lote"),
     path("lote/<int:pk>/apagar/", views.remover_lote, name="remover_lote"),
-    path('exportar-produtos-pdf/', views.exportar_produtos_pdf, name='exportar_produtos_pdf'),
-   
+    path('exportar-excel-simples/', views.exportar_produtos_excel, name='exportar_produtos_excel'),
 
 
 

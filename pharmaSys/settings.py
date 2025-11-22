@@ -9,7 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ==========================
 SECRET_KEY = 'django-insecure-o%cf1_-^p95dr-aupdnimbg_-k@xugqx70f79_##63h9&ox1!y'
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-DEBUG = False
+DEBUG = True
 ALLOWED_HOSTS = ['*']  # Ajuste para produção
 
 # Permitir o domínio do seu site para POSTs
@@ -28,7 +28,10 @@ SESSION_SAVE_EVERY_REQUEST = True
 
 # ==========================
 # INSTALLED APPS
+# ==========================
 INSTALLED_APPS = [
+
+    'import_export',
     'django.contrib.admin',
     'django.contrib.humanize',
     'django.contrib.auth',
@@ -43,8 +46,16 @@ INSTALLED_APPS = [
     "productos.apps.ProductosConfig",
     "fornecedores.apps.FornecedoresConfig",
     "usuarios.apps.UsuariosConfig",
-    'relatorios.apps.RelatoriosConfig'
+    'relatorios.apps.RelatoriosConfig',
 ]
+# Configuração mínima para teste
+# ==========================
+# UNFOLD ADMIN CONFIG
+# ==========================
+# ==========================
+# UNFOLD ADMIN CONFIG - TEMA VERDE
+# ==========================
+
 
 # ==========================
 # MIDDLEWARE
@@ -88,18 +99,33 @@ DATABASES = {
     #     default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
     # )
 }
-POSTGRES_LOCALLY = True
-
-if not DEBUG or POSTGRES_LOCALLY:
-    DATABASES['default'] = dj_database_url.parse(
-        'postgresql://postgres:aasiGbCkQfTCRDfiMXdyQdNfXGHYynTw@maglev.proxy.rlwy.net:41864/railway'
-    )
-
+# POSTGRES_LOCALLY = False
+# if not DEBUG or POSTGRES_LOCALLY:
+#     DATABASES['default'] = dj_database_url.parse(
+#         'postgresql://postgres:aasiGbCkQfTCRDfiMXdyQdNfXGHYynTw@maglev.proxy.rlwy.net:41864/railway')
 
 # ==========================
 # DATABASE CONFIGURATION
 # ==========================
 import dj_database_url
+
+POSTGRES_LOCALLY =  True # 🔁 True = Railway / False = Local (SQLite)
+
+if POSTGRES_LOCALLY:
+    print("☁️ Usando banco de dados PostgreSQL (Railway)")
+    DATABASES = {
+        'default': dj_database_url.parse(
+            'postgresql://postgres:aasiGbCkQfTCRDfiMXdyQdNfXGHYynTw@maglev.proxy.rlwy.net:41864/railway'
+        )
+    }
+else:
+    print("💻 Usando banco de dados local (SQLite)")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # ==========================
 # PASSWORD VALIDATION

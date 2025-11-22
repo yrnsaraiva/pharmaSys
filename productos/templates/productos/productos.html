@@ -11,14 +11,22 @@
                     <h2 class="text-xl font-bold text-gray-900 mb-2">Gestão de Estoque</h2>
                     <p class="text-gray-600">Controle completo do inventário da farmácia</p>
                 </div>
-                <div class="flex justify-between"
+                <div class="flex justify-between">
+                     <!-- Botão Exportar Excel - Versão Profissional -->
+                            <a href="{% url 'exportar_produtos_excel' %}"
+                               class="bg-white text-green-700 border-2 border-green-600 hover:bg-green-600 hover:text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center shadow-md hover:shadow-lg">
+                                <i class="mr-3">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0zM9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1zM5.884 6.68 8 9.219l2.116-2.54a.5.5 0 1 1 .768.641L8.651 10l2.233 2.68a.5.5 0 0 1-.768.64L8 10.781l-2.116 2.54a.5.5 0 0 1-.768-.641L7.349 10 5.116 7.32a.5.5 0 1 1 .768-.64z"/>
+                                    </svg>
+                                </i>
+                                Exportar Excel
+                            </a>
+
+
 
                     <!-- Botão Adicionar Produto - Apenas Gerente e Admin -->
                     {% if user|is_admin or user|is_gerente %}
-                        <a href="{% url 'exportar_produtos_pdf' %}" class="btn btn-success">
-                            <i class="fas fa-file-pdf"></i> Exportar PDF
-                        </a>
-
                         <a class="bg-pharmacy-green hover:bg-pharmacy-green-dark text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center shadow-lg mx-2"
                            id="add-product-btn" href="{% url 'cadastrar_producto' %}">
                             <i class="mr-2" data-fa-i2svg="">

@@ -1,3 +1,6 @@
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Side
+from openpyxl.styles import Alignment
 from .models import Produto, Categoria, Fornecedor, Lote
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -5,11 +8,14 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from core.decorators import admin_required, gerente_required, vendedor_required
+from django.http import HttpResponse
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from reportlab.lib.units import inch
 from django.utils import timezone
 from io import BytesIO
-from django.http import HttpResponse
-from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
 
 
@@ -318,3 +324,201 @@ def remover_lote(request, pk):
 
 
 
+
+
+
+from django.http import HttpResponse
+from django.utils import timezone
+from django.db.models import Sum
+from django.contrib.auth.decorators import login_required
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
+
+
+
+@login_required
+@gerente_required
+def exportar_produtos_excel(request):
+    """Exporta produtos para Excel (.xlsx) com formatação"""
+
+    produtos = Produto.objects.all().order_by('categoria__nome', 'nome')
+
+    # Cria a workbook e worksheet
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Relatório de Estoque"
+
+    # Estilos
+    header_font = Font(bold=True, color="FFFFFF", size=12)
+    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    title_font = Font(bold=True, size=16)
+    alert_fill = PatternFill(start_color="FFCCCB", end_color="FFCCCB", fill_type="solid")  # Vermelho claro
+    warning_fill = PatternFill(start_color="FFE599", end_color="FFE599", fill_type="solid")  # Amarelo claro
+    ok_fill = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")  # Verde claro
+
+    thin_border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+
+    center_align = Alignment(horizontal='center', vertical='center')
+
+    # Título
+    ws.merge_cells('A1:H1')
+    ws['A1'] = "RELATÓRIO DE ESTOQUE - BALANÇO DE PRODUTOS"
+    ws['A1'].font = title_font
+    ws['A1'].alignment = center_align
+
+    ws.merge_cells('A2:H2')
+    ws['A2'] = f"Emitido em: {timezone.now().strftime('%d/%m/%Y às %H:%M')}"
+    ws['A2'].alignment = center_align
+
+    # Linha em branco
+    ws.append([])
+
+    # Cabeçalho da tabela
+    headers = ['Produto', 'Categoria', 'Código Barras', 'Lotes Ativos', 'Estoque Atual', 'Estoque Mínimo', 'Status',
+               'Preço Venda']
+    ws.append(headers)
+
+    # Formata cabeçalho
+    for col in range(1, len(headers) + 1):
+        cell = ws.cell(row=4, column=col)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center_align
+        cell.border = thin_border
+
+    # Dados dos produtos
+    row_num = 5
+    for produto in produtos:
+        # Calcula estoque dos lotes de forma mais eficiente
+        lotes = Lote.objects.filter(produto=produto)
+        estoque_total = lotes.aggregate(total=Sum('quantidade_disponivel'))['total'] or 0
+        num_lotes = lotes.count()
+
+        # Determina status
+        if estoque_total == 0:
+            status = "SEM ESTOQUE"
+            status_fill = alert_fill
+        elif estoque_total <= produto.estoque_minimo:
+            status = "ESTOQUE BAIXO"
+            status_fill = warning_fill
+        else:
+            status = "ESTOQUE OK"
+            status_fill = ok_fill
+
+        # Adiciona linha
+        row = [
+            produto.nome,
+            produto.categoria.nome if produto.categoria else 'N/A',
+            produto.codigo_barras or 'N/A',
+            num_lotes,
+            estoque_total,
+            produto.estoque_minimo,
+            status,
+            float(produto.preco_venda) if produto.preco_venda else 0.0
+        ]
+
+        ws.append(row)
+
+        # Formata a linha
+        for col in range(1, len(row) + 1):
+            cell = ws.cell(row=row_num, column=col)
+            cell.border = thin_border
+
+            # Formata colunas numéricas
+            if col in [4, 5, 6]:  # Lotes, Estoque, Mínimo
+                cell.alignment = center_align
+                if col in [5, 6]:  # Estoque e Mínimo
+                    cell.number_format = '#,##0'
+            elif col == 8:  # Preço
+                cell.number_format = '"MT" #,##0.00'
+                cell.alignment = center_align
+
+            # Aplica cor de fundo baseada no status
+            if col == 7:  # Coluna Status
+                cell.fill = status_fill
+                cell.alignment = center_align
+                cell.font = Font(bold=True)
+
+        row_num += 1
+
+    # Ajusta largura das colunas
+    column_widths = {
+        'A': 40,  # Produto
+        'B': 20,  # Categoria
+        'C': 15,  # Código
+        'D': 12,  # Lotes
+        'E': 15,  # Estoque
+        'F': 15,  # Mínimo
+        'G': 15,  # Status
+        'H': 15,  # Preço
+    }
+
+    for col_letter, width in column_widths.items():
+        ws.column_dimensions[col_letter].width = width
+
+    # Adiciona resumo após os dados
+    summary_start_row = row_num + 2
+
+    # Calcula totais de forma mais eficiente
+    total_sem_estoque = 0
+    total_baixo_estoque = 0
+    total_ok_estoque = 0
+    total_geral_estoque = 0
+
+    for produto in produtos:
+        estoque_total = Lote.objects.filter(produto=produto).aggregate(
+            total=Sum('quantidade_disponivel')
+        )['total'] or 0
+
+        total_geral_estoque += estoque_total
+
+        if estoque_total == 0:
+            total_sem_estoque += 1
+        elif estoque_total <= produto.estoque_minimo:
+            total_baixo_estoque += 1
+        else:
+            total_ok_estoque += 1
+
+    # Título do resumo
+    ws.merge_cells(f'A{summary_start_row}:H{summary_start_row}')
+    ws[f'A{summary_start_row}'] = "RESUMO DO ESTOQUE"
+    ws[f'A{summary_start_row}'].font = Font(bold=True, size=12)
+    ws[f'A{summary_start_row}'].fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+    ws[f'A{summary_start_row}'].alignment = center_align
+
+    # Dados do resumo
+    resumo_data = [
+        ['Total de Produtos', len(produtos)],
+        ['Produtos sem Estoque', total_sem_estoque],
+        ['Produtos com Estoque Baixo', total_baixo_estoque],
+        ['Produtos com Estoque OK', total_ok_estoque],
+        ['Estoque Total Geral', f"{total_geral_estoque} unidades"],
+    ]
+
+    for i, (descricao, valor) in enumerate(resumo_data, start=1):
+        row_idx = summary_start_row + i
+
+        # Descrição
+        cell_desc = ws.cell(row=row_idx, column=1, value=descricao)
+        cell_desc.font = Font(bold=True)
+        cell_desc.border = thin_border
+
+        # Valor
+        cell_val = ws.cell(row=row_idx, column=2, value=valor)
+        cell_val.border = thin_border
+
+        if i < len(resumo_data):  # Não formata a última linha como número
+            cell_val.number_format = '#,##0'
+
+    # Prepara a resposta
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="relatorio_estoque.xlsx"'
+
+    wb.save(response)
+
+    return response

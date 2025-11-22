@@ -29,7 +29,7 @@ class Produto(models.Model):
     nome = models.CharField(max_length=100)
     categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True)
     fornecedor = models.ForeignKey(Fornecedor, on_delete=models.SET_NULL, null=True)
-    codigo_barras = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    codigo_barras = models.CharField(max_length=50, unique=False, null=True, blank=True)
 
     preco_compra = models.DecimalField(max_digits=10, decimal_places=2)
     preco_venda = models.DecimalField(max_digits=10, decimal_places=2)
@@ -83,12 +83,7 @@ class Produto(models.Model):
     def estoque_total(self):
         """Soma a quantidade disponível em todos os lotes."""
         return self.lote_set.aggregate(total=Sum("quantidade_disponivel"))["total"] or 0
-        
-    def total_nr_caixas(self):
-        """Retorna a soma de nr_caixas de todos os lotes"""
-        return self.lote_set.aggregate(total=Sum('nr_caixas'))['total'] or 0   
-        
-    
+
     def status_estoque(self):
         """Verifica o status baseado no estoque mínimo"""
         qtd = self.estoque_total()
@@ -125,6 +120,24 @@ class Produto(models.Model):
                                                                                          rounding=ROUND_CEILING)
         super().save(*args, **kwargs)
 
+    def estoque_total(self):
+        """Retorna o estoque total somando todos os lotes"""
+        lotes = self.lote_set.all()  # Assumindo que Lote tem ForeignKey para Produto
+        return sum(lote.quantidade_disponivel for lote in lotes)
+
+    def total_nr_caixas(self):
+        """Retorna a soma de nr_caixas de todos os lotes"""
+        return self.lote_set.aggregate(total=Sum('nr_caixas'))['total'] or 0
+
+    def status_estoque(self):
+        """Retorna o status do estoque"""
+        estoque_total = self.estoque_total()
+        if estoque_total == 0:
+            return "sem_estoque"
+        elif estoque_total <= self.estoque_minimo:
+            return "baixo"
+        else:
+            return "ok"
 
 class Lote(models.Model):
     produto = models.ForeignKey(Produto, on_delete=models.CASCADE)
