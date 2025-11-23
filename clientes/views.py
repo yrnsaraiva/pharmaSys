@@ -8,6 +8,7 @@ from django.db.models import Sum, Count
 from .models import Cliente
 from vendas.models import ItemVenda, Venda
 from core.decorators import admin_required, gerente_required, vendedor_required
+from django.db.models import Sum, Count, F
 
 
 # ---------- CRIAR CLIENTE ----------
