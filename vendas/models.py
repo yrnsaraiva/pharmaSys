@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.db import transaction
 from django.core.validators import MinValueValidator
+from django.utils import timezone  # ✅ ADICIONE ESTA LINHA
 from clientes.models import Cliente
 from productos.models import Lote, Produto
 
@@ -17,7 +18,7 @@ class Venda(models.Model):
 
     cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True, blank=True)
     atendente = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    data_venda = models.DateTimeField(default=timezone.now)
+    data_venda = models.DateTimeField(default=timezone.now)  # ✅ AGORA FUNCIONA
     data_atualizacao = models.DateTimeField(auto_now=True)
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     forma_pagamento = models.CharField(max_length=20, choices=FORMA_PAGAMENTO_CHOICES)
@@ -108,8 +109,3 @@ class ItemVenda(models.Model):
     @property
     def subtotal(self):
         return (self.preco_unitario or 0) * (self.quantidade or 0)
-
-
-
-
-
