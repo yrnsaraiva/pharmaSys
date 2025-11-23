@@ -1,53 +1,87 @@
+from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from pyexpat.errors import messages
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Count
 
 from .models import Cliente
 from vendas.models import ItemVenda, Venda
 from core.decorators import admin_required, gerente_required, vendedor_required
 
+
 # ---------- CRIAR CLIENTE ----------
-
-
 @login_required
 @vendedor_required
 def criar_cliente(request):
     if request.method == "POST":
         nome_cliente = request.POST.get('nome')
-        telefone_cliente = request.POST.get("phone")
-        email_cliente = request.POST.get("email")
-        endereco_cliente = request.POST.get("endereco")
+        telefone_cliente = request.POST.get("phone") or request.POST.get("telefone", "")
+        email_cliente = request.POST.get("email", "")
+        endereco_cliente = request.POST.get("endereco", "")
 
-        # Criação do fornecedor
-        cliente = Cliente.objects.create(
-            nome=nome_cliente,
-            telefone=telefone_cliente,
-            email=email_cliente,
-            endereco=endereco_cliente
-        )
-        print(cliente)
-        cliente.save()
+        # Validar campos obrigatórios
+        if not nome_cliente:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'errors': 'Nome é obrigatório'
+                })
+            else:
+                # Para requisição normal, mostrar erro na página
+                return render(request, "clientes/novos_clientes.html", {
+                    'error': 'Nome é obrigatório'
+                })
 
-        return redirect("listar_cliente")
+        # Criação do cliente
+        try:
+            cliente = Cliente.objects.create(
+                nome=nome_cliente,
+                telefone=telefone_cliente,
+                email=email_cliente if email_cliente else None,
+                endereco=endereco_cliente if endereco_cliente else None
+            )
 
+            # Se for requisição AJAX (modal), retornar JSON
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'cliente_id': cliente.id,
+                    'cliente_nome': cliente.nome,
+                    'cliente_telefone': cliente.telefone or '',
+                    'message': 'Cliente criado com sucesso!'
+                })
+            else:
+                # Se for requisição normal, redirecionar
+                return redirect("listar_cliente")
+
+        except Exception as e:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'errors': f'Erro ao criar cliente: {str(e)}'
+                })
+            else:
+                return render(request, "clientes/novos_clientes.html", {
+                    'error': f'Erro ao criar cliente: {str(e)}'
+                })
+
+    # Se for GET, renderizar o template normal
     return render(request, "clientes/novos_clientes.html")
 
 
 # ---------- LISTAR CLIENTES ----------
-
 @login_required
 @vendedor_required
 def listar_cliente(request):
-    # Obtém todos os fornecedores
+    # Obtém todos os clientes
     cliente = Cliente.objects.all()
     # Filtro por nome
     search = request.GET.get('search', '')
     if search:
         cliente = Cliente.objects.filter(nome__icontains=search)
 
-    # Paginação: 5 fornecedores por página
+    # Paginação: 5 clientes por página
     paginator = Paginator(cliente, 5)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
@@ -70,7 +104,6 @@ def listar_cliente(request):
 
 
 # ---------- EDITAR CLIENTE ----------
-
 @login_required
 @vendedor_required
 def editar_cliente(request, cliente_id):
@@ -98,10 +131,7 @@ def deletar_cliente(request, cliente_id):
     cliente.delete()
     return redirect("listar_cliente")
 
-from django.shortcuts import render, get_object_or_404
-from django.db.models import Sum, F
-from vendas.models import Venda, ItemVenda
-from clientes.models import Cliente
+
 @vendedor_required
 def detalhes_cliente(request, cliente_id):
     cliente = get_object_or_404(Cliente, id=cliente_id)
