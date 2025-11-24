@@ -41,7 +41,7 @@ SESSION_SAVE_EVERY_REQUEST = True
 # INSTALLED APPS
 # ==========================
 INSTALLED_APPS = [
-    #'import_export',
+    'import_export',
     'django.contrib.admin',
     'django.contrib.humanize',
     'django.contrib.auth',
