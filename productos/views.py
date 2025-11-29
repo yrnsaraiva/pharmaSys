@@ -1,24 +1,15 @@
-from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Side
-from openpyxl.styles import Alignment
+from core.decorators import gerente_required, vendedor_required, admin_required
 from .models import Produto, Categoria, Fornecedor, Lote
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.contrib.auth.decorators import login_required
-from core.decorators import admin_required, gerente_required, vendedor_required
 from django.http import HttpResponse
-from reportlab.lib.pagesizes import letter, A4
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib import colors
-from reportlab.lib.units import inch
 from django.utils import timezone
-from io import BytesIO
-
-
-
+from django.db.models import Sum
+from django.contrib.auth.decorators import login_required
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
 # Listar categorias
 
 
@@ -322,17 +313,49 @@ def remover_lote(request, pk):
     return redirect("listar_lotes")
 
 
+@login_required
+@gerente_required
+def editar_lote(request, pk):
+    lote = get_object_or_404(Lote, pk=pk)
+
+    if request.method == "POST":
+        numero_lote = request.POST.get("numero_lote")
+        nr_caixas = request.POST.get("nr_caixas")
+        data_validade = request.POST.get("data_validade")
+        data_fabricacao = request.POST.get("data_fabricacao")
+
+        # Atualiza os campos do lote
+        lote.numero_lote = numero_lote
+        lote.nr_caixas = int(nr_caixas) if nr_caixas else 0
+        lote.data_validade = data_validade or None
+        lote.data_fabricacao = data_fabricacao or None
+
+        # Recalcula a quantidade disponível baseado no nr_caixas
+        if lote.produto and lote.produto.carteiras_por_caixa:
+            lote.quantidade_disponivel = lote.nr_caixas * lote.produto.carteiras_por_caixa
+        else:
+            lote.quantidade_disponivel = lote.nr_caixas
+
+        lote.save()
+
+        messages.success(request, "✅ Lote atualizado com sucesso!")
+        return redirect("listar_lotes")
+
+    context = {
+        "lote": lote,
+        "produtos": Produto.objects.all(),
+        "editar": True  # 👈 Flag para identificar modo edição
+    }
+
+    return render(request, "productos/novo_lote.html", context)
 
 
 
 
 
-from django.http import HttpResponse
-from django.utils import timezone
-from django.db.models import Sum
-from django.contrib.auth.decorators import login_required
-from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
+
+
+
 
 
 
