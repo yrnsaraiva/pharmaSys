@@ -3,11 +3,7 @@ from decimal import Decimal
 from django.contrib.auth.models import User
 from django.db import models
 from django.core.validators import MinValueValidator
-<<<<<<< HEAD
 from django.utils import timezone
-=======
-from django.utils import timezone  # ✅ ADICIONE ESTA LINHA
->>>>>>> 28c167228ec5c40f635719dd345fcfbbdff503c6
 from clientes.models import Cliente
 from productos.models import Lote, Produto
 
@@ -23,11 +19,7 @@ class Venda(models.Model):
 
     cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True, blank=True)
     atendente = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-<<<<<<< HEAD
     data_venda = models.DateTimeField(default=timezone.now)  # ✅ CORRETO
-=======
-    data_venda = models.DateTimeField(default=timezone.now)  # ✅ AGORA FUNCIONA
->>>>>>> 28c167228ec5c40f635719dd345fcfbbdff503c6
     data_atualizacao = models.DateTimeField(auto_now=True)
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     forma_pagamento = models.CharField(max_length=20, choices=FORMA_PAGAMENTO_CHOICES)
@@ -84,11 +76,7 @@ class ItemVenda(models.Model):
 
     @property
     def subtotal(self):
-<<<<<<< HEAD
         return (self.preco_unitario or Decimal('0.00')) * (self.quantidade or 1)
 
     def __str__(self):
         return f"{self.quantidade} {self.unidade}(s) de {self.produto.nome}"
-=======
-        return (self.preco_unitario or 0) * (self.quantidade or 0)
->>>>>>> 28c167228ec5c40f635719dd345fcfbbdff503c6
