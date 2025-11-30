@@ -28,7 +28,7 @@
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-pharmacy-gray p-8">
-        <form method="post">
+        <form method="post" id="lote-form">
             {% csrf_token %}
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -38,9 +38,15 @@
                             class="text-red-500">*</span></label>
                     <select name="produto" id="produto-select" required
                             class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                        <option value="">Selecione um produto</option>
                         {% for produto in produtos %}
-                            <option value="{{ produto.id }}" {% if lote and lote.produto.id == produto.id %}selected{% endif %}>
+                            <option value="{{ produto.id }}"
+                                    {% if lote and lote.produto.id == produto.id %}selected{% endif %}
+                                    data-carteiras-por-caixa="{{ produto.carteiras_por_caixa|default:1 }}">
                                 {{ produto.nome }}
+                                {% if produto.carteiras_por_caixa and produto.carteiras_por_caixa > 1 %}
+                                    ({{ produto.carteiras_por_caixa }} carteiras/caixa)
+                                {% endif %}
                             </option>
                         {% endfor %}
                     </select>
@@ -51,29 +57,78 @@
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Número do Lote <span
                             class="text-red-500">*</span></label>
                     <input type="text" name="numero_lote" required value="{{ lote.numero_lote|default:'' }}"
-                           class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                           class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none"
+                           placeholder="Ex: LOTE2024001">
                 </div>
 
-                <!-- Quantidade disponível -->
+                <!-- Caixas -->
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Qtd. em caixas</label>
-                    <input type="number" min="0" name="nr_caixas" value="{{ lote.nr_caixas|default:1 }}"
-                           class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Quantidade de Caixas</label>
+                    <input type="number" min="0" name="nr_caixas" id="nr_caixas"
+                           value="{{ lote.nr_caixas|default:0 }}"
+                           class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none quantity-input"
+                           placeholder="0">
+                    <p class="text-xs text-gray-500 mt-1" id="caixas-info">
+                        Informe a quantidade de caixas completas
+                    </p>
+                </div>
+
+                <!-- Carteiras -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Quantidade de Carteiras Avulsas</label>
+                    <input type="number" min="0" name="nr_carteiras" id="nr_carteiras"
+                           value="{{ lote.nr_carteiras|default:0 }}"
+                           class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none quantity-input"
+                           placeholder="0">
+                    <p class="text-xs text-gray-500 mt-1" id="carteiras-info">
+                        Informe carteiras avulsas (fora das caixas)
+                    </p>
                 </div>
 
                 <!-- Data de validade -->
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Data de Validade</label>
-                    <input type="date" name="data_validade" value="{{ lote.data_validade|date:'Y-m-d'|default:'' }}"
-                           class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Data de Validade <span
+                            class="text-red-500">*</span></label>
+                    <input type="date" name="data_validade" required
+                           value="{{ lote.data_validade|date:'Y-m-d'|default:'' }}"
+                           class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none"
+                           min="{{ today|date:'Y-m-d' }}">
+                    <p class="text-xs text-gray-500 mt-1">Data até quando o produto pode ser vendido</p>
                 </div>
 
                 <!-- Data de fabricação -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Data de Fabricação</label>
-                    <input type="date" name="data_fabricacao" value="{{ lote.data_fabricacao|date:'Y-m-d'|default:'' }}"
-                           class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none">
+                    <input type="date" name="data_fabricacao"
+                           value="{{ lote.data_fabricacao|date:'Y-m-d'|default:'' }}"
+                           class="w-full px-4 py-3 border rounded-lg border-pharmacy-gray focus:ring-2 focus:ring-pharmacy-green focus:outline-none"
+                           max="{{ today|date:'Y-m-d' }}">
+                    <p class="text-xs text-gray-500 mt-1">Data quando o produto foi fabricado (opcional)</p>
                 </div>
+            </div>
+
+            <!-- Resumo do cálculo -->
+            <div id="resumo-calculado" class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200 hidden">
+                <h3 class="font-semibold text-blue-800 mb-2">Resumo do Estoque</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                        <span class="font-medium">Total em Unidades:</span>
+                        <span id="total-unidades" class="ml-2 font-bold text-blue-700">0</span>
+                    </div>
+                    <div>
+                        <span class="font-medium">Equivalente em:</span>
+                        <span id="equivalente-caixas" class="ml-2 text-blue-600">0 caixas + 0 carteiras</span>
+                    </div>
+                    <div>
+                        <span class="font-medium">Produto Selecionado:</span>
+                        <span id="info-produto" class="ml-2 text-blue-600">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mensagens de validação -->
+            <div id="mensagem-validacao" class="mt-4 p-3 rounded-lg hidden">
+                <p id="texto-validacao" class="text-sm font-medium"></p>
             </div>
 
             <!-- Botões -->
@@ -82,7 +137,7 @@
                    class="px-6 py-3 border border-pharmacy-gray text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium flex items-center">
                     Cancelar
                 </a>
-                <button type="submit"
+                <button type="submit" id="submit-btn"
                         class="px-6 py-3 bg-pharmacy-green hover:bg-pharmacy-green-dark text-white rounded-lg transition-colors font-medium flex items-center shadow-lg">
                     <svg class="mr-2 w-5 h-5" viewBox="0 0 448 512" fill="currentColor">
                         <path d="M438.6 105.4c12.5 12.5
@@ -93,7 +148,7 @@
                     338.7 393.4 105.4c12.5-12.5
                     32.8-12.5 45.3 0z"/>
                     </svg>
-                    Salvar Lote
+                    {% if lote %}Atualizar Lote{% else %}Salvar Lote{% endif %}
                 </button>
             </div>
         </form>
@@ -101,12 +156,166 @@
 </div>
 
 <script>
-    $(document).ready(function () {
+document.addEventListener('DOMContentLoaded', function() {
+    const produtoSelect = document.getElementById('produto-select');
+    const nrCaixasInput = document.getElementById('nr_caixas');
+    const nrCarteirasInput = document.getElementById('nr_carteiras');
+    const resumoDiv = document.getElementById('resumo-calculado');
+    const totalUnidadesSpan = document.getElementById('total-unidades');
+    const equivalenteCaixasSpan = document.getElementById('equivalente-caixas');
+    const infoProdutoSpan = document.getElementById('info-produto');
+    const mensagemValidacaoDiv = document.getElementById('mensagem-validacao');
+    const textoValidacao = document.getElementById('texto-validacao');
+    const submitBtn = document.getElementById('submit-btn');
+    const caixasInfo = document.getElementById('caixas-info');
+    const carteirasInfo = document.getElementById('carteiras-info');
+
+    let carteirasPorCaixa = 1;
+    let produtoSelecionado = null;
+
+    // Atualiza informações quando produto é selecionado
+    produtoSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        carteirasPorCaixa = parseInt(selectedOption.getAttribute('data-carteiras-por-caixa')) || 1;
+        produtoSelecionado = selectedOption.text;
+
+        // Atualiza informações do produto
+        infoProdutoSpan.textContent = selectedOption.text;
+        caixasInfo.textContent = `Cada caixa contém ${carteirasPorCaixa} carteiras`;
+        carteirasInfo.textContent = `Carteiras avulsas (menos de ${carteirasPorCaixa} unidades)`;
+
+        calcularResumo();
+    });
+
+    // Calcula resumo quando quantidades mudam
+    function calcularResumo() {
+        const caixas = parseInt(nrCaixasInput.value) || 0;
+        const carteiras = parseInt(nrCarteirasInput.value) || 0;
+
+        // Calcula total em unidades
+        const totalUnidades = (caixas * carteirasPorCaixa) + carteiras;
+
+        // Calcula equivalente em caixas/carteiras
+        const caixasEquivalentes = Math.floor(totalUnidades / carteirasPorCaixa);
+        const carteirasEquivalentes = totalUnidades % carteirasPorCaixa;
+
+        // Atualiza display
+        totalUnidadesSpan.textContent = totalUnidades.toLocaleString('pt-BR');
+        equivalenteCaixasSpan.textContent = `${caixasEquivalentes} caixas + ${carteirasEquivalentes} carteiras`;
+
+        // Mostra/oculta resumo
+        if (totalUnidades > 0 && produtoSelecionado) {
+            resumoDiv.classList.remove('hidden');
+        } else {
+            resumoDiv.classList.add('hidden');
+        }
+
+        // Validações
+        validarFormulario(caixas, carteiras, totalUnidades);
+    }
+
+    // Validações do formulário
+    function validarFormulario(caixas, carteiras, totalUnidades) {
+        let mensagens = [];
+        let tipoMensagem = 'warning'; // warning, error, success
+
+        // Validações básicas
+        if (caixas < 0 || carteiras < 0) {
+            mensagens.push("Valores não podem ser negativos");
+            tipoMensagem = 'error';
+        }
+
+        if (totalUnidades === 0) {
+            mensagens.push("Informe pelo menos caixas ou carteiras");
+            tipoMensagem = 'warning';
+        }
+
+        if (carteiras >= carteirasPorCaixa) {
+            mensagens.push(`Carteiras avulsas (${carteiras}) devem ser menores que ${carteirasPorCaixa}. Considere converter em caixas.`);
+            tipoMensagem = 'warning';
+        }
+
+        // Atualiza mensagem de validação
+        if (mensagens.length > 0) {
+            textoValidacao.textContent = mensagens.join('. ');
+            mensagemValidacaoDiv.className = `mt-4 p-3 rounded-lg ${
+                tipoMensagem === 'error' ? 'bg-red-100 border border-red-300 text-red-700' :
+                tipoMensagem === 'warning' ? 'bg-yellow-100 border border-yellow-300 text-yellow-700' :
+                'bg-green-100 border border-green-300 text-green-700'
+            }`;
+            mensagemValidacaoDiv.classList.remove('hidden');
+
+            // Desabilita submit se for erro
+            submitBtn.disabled = (tipoMensagem === 'error');
+            submitBtn.classList.toggle('opacity-50', tipoMensagem === 'error');
+            submitBtn.classList.toggle('cursor-not-allowed', tipoMensagem === 'error');
+        } else {
+            mensagemValidacaoDiv.classList.add('hidden');
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    }
+
+    // Event listeners para inputs de quantidade
+    nrCaixasInput.addEventListener('input', calcularResumo);
+    nrCarteirasInput.addEventListener('input', calcularResumo);
+
+    // Inicializa Select2 se disponível
+    if (typeof $.fn.select2 !== 'undefined') {
         $('#produto-select').select2({
             placeholder: 'Selecione ou busque um produto',
             allowClear: true
         });
+    }
+
+    // Calcula resumo inicial se editando
+    {% if lote %}
+    setTimeout(() => {
+        produtoSelect.dispatchEvent(new Event('change'));
+    }, 100);
+    {% endif %}
+
+    // Previne envio se houver erro
+    document.getElementById('lote-form').addEventListener('submit', function(e) {
+        const caixas = parseInt(nrCaixasInput.value) || 0;
+        const carteiras = parseInt(nrCarteirasInput.value) || 0;
+
+        if (caixas < 0 || carteiras < 0) {
+            e.preventDefault();
+            alert('Valores não podem ser negativos');
+            return false;
+        }
+
+        if ((caixas === 0 && carteiras === 0) || !produtoSelect.value) {
+            e.preventDefault();
+            alert('Preencha todos os campos obrigatórios');
+            return false;
+        }
     });
+});
 </script>
+
+<style>
+.quantity-input:focus {
+    border-color: #10B981;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.hidden {
+    display: none;
+}
+
+/* Estilos para Select2 personalizado */
+.select2-container--default .select2-selection--single {
+    border: 1px solid #D1D5DB;
+    border-radius: 0.5rem;
+    height: 48px;
+    padding: 0.5rem 0.75rem;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 46px;
+}
+</style>
 
 {% endblock %}

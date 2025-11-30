@@ -1,29 +1,73 @@
-from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Side
-from openpyxl.styles import Alignment
+from django.db.models import Sum, Min, Q
+from core.decorators import gerente_required, vendedor_required, admin_required
 from .models import Produto, Categoria, Fornecedor, Lote
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q
-from django.contrib.auth.decorators import login_required
-from core.decorators import admin_required, gerente_required, vendedor_required
 from django.http import HttpResponse
-from reportlab.lib.pagesizes import letter, A4
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib import colors
-from reportlab.lib.units import inch
 from django.utils import timezone
-from io import BytesIO
+from django.contrib.auth.decorators import login_required
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
+from django.core.exceptions import ValidationError
+from decimal import Decimal, InvalidOperation
+import datetime
 
 
+# Utilitários
+def get_paginated_data(queryset, request, items_per_page=10):
+    """Helper para paginação com range customizado"""
+    paginator = Paginator(queryset, items_per_page)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
 
-# Listar categorias
+    current_page = page_obj.number
+    total_pages = paginator.num_pages
+    start_page = max(current_page - 2, 1)
+    end_page = min(current_page + 2, total_pages)
+
+    return {
+        "page_obj": page_obj,
+        "custom_range": range(start_page, end_page + 1)
+    }
 
 
+def safe_decimal(value, default=0):
+    """Converte seguro para Decimal"""
+    if not value:
+        return Decimal(default)
+    try:
+        return Decimal(str(value))
+    except (InvalidOperation, ValueError):
+        return Decimal(default)
 
 
+def safe_int(value, default=0):
+    """Converte seguro para inteiro"""
+    if not value:
+        return default
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+
+def parse_date(date_string, default=None):
+    """Converte string para date object de forma segura"""
+    if not date_string:
+        return default
+
+    if isinstance(date_string, datetime.date):
+        return date_string
+
+    try:
+        # Tenta converter de string no formato YYYY-MM-DD
+        return datetime.datetime.strptime(date_string, '%Y-%m-%d').date()
+    except (ValueError, TypeError):
+        return default
+
+
+# Categorias (mantidas iguais)
 @login_required
 @gerente_required
 def categorias_list(request):
@@ -33,24 +77,12 @@ def categorias_list(request):
     if search:
         categorias = categorias.filter(nome__icontains=search)
 
-    paginator = Paginator(categorias, 5)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
-
-    # Calcular range dinâmico
-    current_page = page_obj.number
-    total_pages = paginator.num_pages
-
-    # mostra 2 antes e 2 depois
-    start_page = max(current_page - 2, 1)
-    end_page = min(current_page + 2, total_pages)
-    custom_range = range(start_page, end_page + 1)
+    pagination_data = get_paginated_data(categorias, request, 5)
 
     return render(request, "productos/categorias.html", {
-        "categorias": page_obj,
-        "page_obj": page_obj,
+        "categorias": pagination_data["page_obj"],
+        **pagination_data,
         "search": search,
-        "custom_range": custom_range,
     })
 
 
@@ -58,84 +90,95 @@ def categorias_list(request):
 @gerente_required
 def criar_categoria(request):
     if request.method == "POST":
-        nome = request.POST.get("nome")
-        tipo = request.POST.get("tipo")
-        descricao = request.POST.get("descricao")
+        try:
+            nome = request.POST.get("nome", "").strip()
+            tipo = request.POST.get("tipo")
+            descricao = request.POST.get("descricao", "")
 
-        categoria = Categoria.objects.create(
-            nome=nome,
-            tipo=tipo,
-            descricao=descricao
-        )
-        print(categoria)
-        categoria.save()
+            if not nome:
+                messages.error(request, "Nome da categoria é obrigatório")
+                return render(request, "productos/nova_categoria.html")
 
-        return redirect('categorias_list')
+            if Categoria.objects.filter(nome__iexact=nome).exists():
+                messages.error(request, "Já existe uma categoria com este nome")
+                return render(request, "productos/nova_categoria.html")
+
+            categoria = Categoria.objects.create(
+                nome=nome,
+                tipo=tipo,
+                descricao=descricao
+            )
+
+            messages.success(request, "✅ Categoria criada com sucesso!")
+            return redirect('categorias_list')
+
+        except Exception as e:
+            messages.error(request, f"Erro ao criar categoria: {str(e)}")
 
     return render(request, "productos/nova_categoria.html")
 
 
-# Excluir categoria
 @login_required
 @gerente_required
 def remover_categoria(request, categoria_id):
     categoria = get_object_or_404(Categoria, pk=categoria_id)
+
+    if Produto.objects.filter(categoria=categoria).exists():
+        messages.error(request, "Não é possível excluir esta categoria pois existem produtos vinculados a ela.")
+        return redirect("categorias_list")
+
     categoria.delete()
+    messages.success(request, "✅ Categoria excluída com sucesso!")
     return redirect("categorias_list")
 
 
-# Listar productos
+# Produtos (mantidas iguais)
 @login_required
 @vendedor_required
 def productos_list(request):
-    # Obtém todos os productos
-    productos = Produto.objects.all().order_by('nome')
+    search = request.GET.get("search", "")
+    categoria = request.GET.get("categoria", "Todas")
+    status = request.GET.get("status", "Todos")
 
-    # Filtros
-    search = request.GET.get('search', '')
-    categoria = request.GET.get('categoria', '')
-    status = request.GET.get('status', '')
+    productos = Produto.objects.all().select_related('categoria')
 
     if search:
         productos = productos.filter(
             Q(nome__icontains=search) |
-            Q(codigo_barras__icontains=search)
+            Q(codigo_barras__icontains=search) |
+            Q(principio_ativo__icontains=search)
         )
 
-    if categoria and categoria != "Todas":
-        productos = productos.filter(categoria__nome__icontains=categoria)
+    if categoria != "Todas":
+        productos = productos.filter(categoria__nome=categoria)
 
-    if status and status != "Todos":
-        # Filtra usando o método status_estoque
-        productos = [p for p in productos if p.status_estoque() == status.lower()]
+    if status != "Todos":
+        if status == "esgotado":
+            productos = [p for p in productos if p.estoque_total == 0]
+        elif status == "baixo":
+            productos = [p for p in productos if p.status_estoque == "baixo"]
+        elif status == "ok":
+            productos = [p for p in productos if p.status_estoque == "ok"]
 
-    # Paginação: 5 productos por página
-    paginator = Paginator(productos, 5)
+    if status != "Todos":
+        paginator = Paginator(productos, 10)
+    else:
+        paginator = Paginator(productos, 10)
+
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    # Calcular range dinâmico
-    current_page = page_obj.number
-    total_pages = paginator.num_pages
-
-    # mostra 2 antes e 2 depois
-    start_page = max(current_page - 2, 1)
-    end_page = min(current_page + 2, total_pages)
-    custom_range = range(start_page, end_page + 1)
-
-    # Categorias distintas para o select
-    categorias = Produto.objects.values_list('categoria__nome', flat=True).distinct()
+    custom_range = range(max(1, page_obj.number - 2), min(page_obj.number + 3, paginator.num_pages + 1))
 
     context = {
         "productos": page_obj,
         "page_obj": page_obj,
+        "custom_range": custom_range,
         "search": search,
         "categoria": categoria,
         "status": status,
-        "categorias": categorias,
-        "custom_range": custom_range,
+        "categorias": Categoria.objects.all()
     }
-
     return render(request, "productos/productos.html", context)
 
 
@@ -146,63 +189,95 @@ def cadastrar_producto(request):
     fornecedores = Fornecedor.objects.all()
 
     if request.method == "POST":
-        nome = request.POST.get("nome")
-        categoria_id = request.POST.get("categoria")
-        fornecedor_id = request.POST.get("fornecedor")
-        codigo_barras = request.POST.get("codigo_barras")
-        preco_venda = request.POST.get("preco_venda")
-        preco_compra = request.POST.get("preco_compra")
-        estoque_minimo = request.POST.get("estoque_minimo")
-        carteiras_por_caixa = request.POST.get("carteiras_por_caixa")
-        preco_carteira = request.POST.get("preco_carteira")
+        try:
+            nome = request.POST.get("nome", "").strip()
+            categoria_id = request.POST.get("categoria")
+            fornecedor_id = request.POST.get("fornecedor")
+            codigo_barras = request.POST.get("codigo_barras", "").strip() or None
 
-        # campos opcionais
-        forma_farmaceutica = request.POST.get("forma_farmaceutica") or None
-        dosagem = request.POST.get("dosagem") or None
-        nivel_prescricao = request.POST.get("nivel_prescricao") or None
-        principio_ativo = request.POST.get("principio_ativo") or None
-        controlado = request.POST.get("controlado") == "on"
+            preco_venda = safe_decimal(request.POST.get("preco_venda"))
+            preco_compra = safe_decimal(request.POST.get("preco_compra"))
+            preco_carteira = safe_decimal(request.POST.get("preco_carteira")) or None
 
-        categoria = get_object_or_404(Categoria, id=categoria_id) if categoria_id else None
-        fornecedor = get_object_or_404(Fornecedor, id=fornecedor_id) if fornecedor_id else None
+            estoque_minimo = safe_int(request.POST.get("estoque_minimo"), 10)
+            carteiras_por_caixa = safe_int(request.POST.get("carteiras_por_caixa"), 1)
 
-        produto = Produto(
-            nome=nome,
-            categoria=categoria,
-            fornecedor=fornecedor,
-            codigo_barras=codigo_barras,
-            preco_venda=preco_venda,
-            preco_compra=preco_compra,
-            preco_carteira=preco_carteira,
-            estoque_minimo=estoque_minimo,
-            carteiras_por_caixa=carteiras_por_caixa,
-            forma_farmaceutica=forma_farmaceutica,
-            dosagem=dosagem,
-            nivel_prescricao=nivel_prescricao,
-            principio_ativo=principio_ativo,
-            controlado=controlado,
-        )
-        produto.save()
+            forma_farmaceutica = request.POST.get("forma_farmaceutica") or None
+            dosagem = request.POST.get("dosagem", "").strip() or None
+            nivel_prescricao = request.POST.get("nivel_prescricao") or None
+            principio_ativo = request.POST.get("principio_ativo", "").strip() or None
+            controlado = request.POST.get("controlado") == "on"
 
-        messages.success(request, "✅ Produto cadastrado com sucesso!")
-        return redirect("productos_list")
+            if not nome:
+                messages.error(request, "Nome do produto é obrigatório")
+                return render(request, "productos/novo_produto.html", {
+                    "categorias": categorias,
+                    "fornecedores": fornecedores
+                })
+
+            if preco_venda <= 0:
+                messages.error(request, "Preço de venda deve ser maior que zero")
+                return render(request, "productos/novo_produto.html", {
+                    "categorias": categorias,
+                    "fornecedores": fornecedores
+                })
+
+            if preco_venda < preco_compra:
+                messages.error(request, "Preço de venda não pode ser menor que preço de compra")
+                return render(request, "productos/novo_produto.html", {
+                    "categorias": categorias,
+                    "fornecedores": fornecedores
+                })
+
+            categoria = get_object_or_404(Categoria, id=categoria_id) if categoria_id else None
+            fornecedor = get_object_or_404(Fornecedor, id=fornecedor_id) if fornecedor_id else None
+
+            produto = Produto(
+                nome=nome,
+                categoria=categoria,
+                fornecedor=fornecedor,
+                codigo_barras=codigo_barras,
+                preco_venda=preco_venda,
+                preco_compra=preco_compra,
+                preco_carteira=preco_carteira,
+                estoque_minimo=estoque_minimo,
+                carteiras_por_caixa=carteiras_por_caixa,
+                forma_farmaceutica=forma_farmaceutica,
+                dosagem=dosagem,
+                nivel_prescricao=nivel_prescricao,
+                principio_ativo=principio_ativo,
+                controlado=controlado,
+            )
+
+            produto.save()
+            messages.success(request, "✅ Produto cadastrado com sucesso!")
+            return redirect("productos_list")
+
+        except ValidationError as e:
+            messages.error(request, f"Erro de validação: {e}")
+        except Exception as e:
+            messages.error(request, f"Erro ao cadastrar produto: {str(e)}")
 
     return render(request, "productos/novo_produto.html", {
         "categorias": categorias,
         "fornecedores": fornecedores,
-        "Producto": Produto,
         "producto": {}
-
     })
 
 
-# Excluir producto
 @login_required
 @admin_required
 def remover_producto(request, producto_id):
     producto = get_object_or_404(Produto, pk=producto_id)
+
+    if Lote.objects.filter(produto=producto).exists():
+        messages.error(request, "Não é possível excluir este produto pois existem lotes vinculados a ele.")
+        return redirect("productos_list")
+
     producto.delete()
+    messages.success(request, "✅ Produto excluído com sucesso!")
     return redirect("productos_list")
+
 
 @login_required
 @admin_required
@@ -211,139 +286,229 @@ def editar_producto(request, producto_id):
     categorias = Categoria.objects.all()
     fornecedores = Fornecedor.objects.all()
 
-    context = {'producto': producto,
-               "categorias": categorias,
-               "fornecedores": fornecedores,
-               "Producto": Produto
-               }
-
     if request.method == "POST":
-        # Campos obrigatórios
-        producto.nome = request.POST.get("nome")
-        categoria_id = request.POST.get("categoria")
-        fornecedor_id = request.POST.get("fornecedor")
-        producto.codigo_barras = request.POST.get("codigo_barras")
-        producto.preco_venda = float(request.POST.get("preco_venda") or 0)
-        producto.preco_compra = float(request.POST.get("preco_compra") or 0)
-        producto.estoque_minimo = int(request.POST.get("estoque_minimo") or 0)
-        producto.carteiras_por_caixa = int(request.POST.get("carteiras_por_caixa") or 0)
-        producto.preco_carteira = float(request.POST.get("preco_carteira") or 0) if request.POST.get(
-            "preco_carteira") else None
+        try:
+            producto.nome = request.POST.get("nome", "").strip()
+            categoria_id = request.POST.get("categoria")
+            fornecedor_id = request.POST.get("fornecedor")
+            producto.codigo_barras = request.POST.get("codigo_barras", "").strip() or None
 
-        # Campos opcionais
-        producto.forma_farmaceutica = request.POST.get("forma_farmaceutica") or None
-        producto.dosagem = request.POST.get("dosagem") or None
-        producto.nivel_prescricao = request.POST.get("nivel_prescricao") or None
-        producto.principio_ativo = request.POST.get("principio_ativo") or None
-        producto.controlado = request.POST.get("controlado") == "on"
+            producto.preco_venda = safe_decimal(request.POST.get("preco_venda"))
+            producto.preco_compra = safe_decimal(request.POST.get("preco_compra"))
+            preco_carteira = request.POST.get("preco_carteira")
+            producto.preco_carteira = safe_decimal(preco_carteira) if preco_carteira else None
 
-        # Relacionamentos
-        producto.categoria = get_object_or_404(Categoria, id=categoria_id) if categoria_id else None
-        producto.fornecedor = get_object_or_404(Fornecedor, id=fornecedor_id) if fornecedor_id else None
+            producto.estoque_minimo = safe_int(request.POST.get("estoque_minimo"), 10)
+            producto.carteiras_por_caixa = safe_int(request.POST.get("carteiras_por_caixa"), 1)
 
-        producto.save()
-        messages.success(request, "✅ Produto atualizado com sucesso!")
-        return redirect('productos_list')
+            producto.forma_farmaceutica = request.POST.get("forma_farmaceutica") or None
+            producto.dosagem = request.POST.get("dosagem", "").strip() or None
+            producto.nivel_prescricao = request.POST.get("nivel_prescricao") or None
+            producto.principio_ativo = request.POST.get("principio_ativo", "").strip() or None
+            producto.controlado = request.POST.get("controlado") == "on"
 
+            producto.categoria = get_object_or_404(Categoria, id=categoria_id) if categoria_id else None
+            producto.fornecedor = get_object_or_404(Fornecedor, id=fornecedor_id) if fornecedor_id else None
+
+            producto.save()
+            messages.success(request, "✅ Produto atualizado com sucesso!")
+            return redirect('productos_list')
+
+        except ValidationError as e:
+            messages.error(request, f"Erro de validação: {e}")
+        except Exception as e:
+            messages.error(request, f"Erro ao atualizar produto: {str(e)}")
+
+    context = {
+        'producto': producto,
+        "categorias": categorias,
+        "fornecedores": fornecedores,
+    }
     return render(request, 'productos/novo_produto.html', context)
 
 
+# Lotes - CORRIGIDAS AS DATAS
 @login_required
-@gerente_required  # 👈 Apenas Admin e Gerente
+@gerente_required
 def listar_lotes(request):
     search = request.GET.get("search", "")
-    lotes = Lote.objects.select_related("produto").all()
+    lotes = Lote.objects.select_related("produto").all().order_by('-data_criacao')
 
     if search:
-        lotes = lotes.filter(produto__nome__icontains=search)
+        lotes = lotes.filter(
+            Q(produto__nome__icontains=search) |
+            Q(numero_lote__icontains=search)
+        )
 
-    paginator = Paginator(lotes, 10)  # 10 lotes por página
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
-
-    # Calcular range dinâmico
-    current_page = page_obj.number
-    total_pages = paginator.num_pages
-
-    # mostra 2 antes e 2 depois
-    start_page = max(current_page - 2, 1)
-    end_page = min(current_page + 2, total_pages)
-    custom_range = range(start_page, end_page + 1)
+    pagination_data = get_paginated_data(lotes, request, 10)
 
     context = {
-        "page_obj": page_obj,
-        "request": request,
-        "custom_range": custom_range,
+        "page_obj": pagination_data["page_obj"],
+        **pagination_data,
+        "search": search,
     }
     return render(request, "productos/lotes.html", context)
 
 
 @login_required
-@gerente_required  # 👈 Apenas Admin e Gerente
+@gerente_required
 def criar_lote(request):
     if request.method == "POST":
-        produto_id = request.POST.get("produto")
-        numero_lote = request.POST.get("numero_lote")
-        nr_caixas = request.POST.get("nr_caixas")  # novo campo: nº de caixas
-        data_validade = request.POST.get("data_validade")
-        data_fabricacao = request.POST.get("data_fabricacao")
-
-        produto = get_object_or_404(Produto, id=produto_id)
-
-        # Calcula quantidade_disponivel em carteiras
         try:
-            nr_caixas = int(nr_caixas)
-        except (TypeError, ValueError):
-            nr_caixas = 0
+            produto_id = request.POST.get("produto")
+            produto = get_object_or_404(Produto, id=produto_id)
 
-        quantidade_disponivel = nr_caixas * (produto.carteiras_por_caixa or 1)
+            nr_caixas = safe_int(request.POST.get("nr_caixas"))
+            nr_carteiras = safe_int(request.POST.get("nr_carteiras"))
+            numero_lote = request.POST.get("numero_lote", "").strip()
 
-        lote = Lote.objects.create(
-            produto=produto,
-            numero_lote=numero_lote,
-            nr_caixas=nr_caixas,
-            quantidade_disponivel=quantidade_disponivel,
-            data_validade=data_validade or None,
-            data_fabricacao=data_fabricacao or None,
-        )
-        return redirect("listar_lotes")
+            # CORREÇÃO: Tratamento seguro das datas
+            data_validade_str = request.POST.get("data_validade")
+            data_fabricacao_str = request.POST.get("data_fabricacao")
 
+            data_validade = parse_date(data_validade_str)
+            data_fabricacao = parse_date(data_fabricacao_str) if data_fabricacao_str else None
+
+            # Validações
+            errors = []
+
+            if not numero_lote:
+                errors.append("Número do lote é obrigatório")
+
+            if not data_validade:
+                errors.append("Data de validade é obrigatória e deve ser uma data válida")
+            elif data_validade < timezone.now().date():
+                errors.append("Data de validade não pode ser no passado")
+
+            if data_fabricacao and data_validade and data_fabricacao >= data_validade:
+                errors.append("Data de fabricação deve ser anterior à data de validade")
+
+            if nr_caixas < 0 or nr_carteiras < 0:
+                errors.append("Valores não podem ser negativos")
+
+            if nr_caixas == 0 and nr_carteiras == 0:
+                errors.append("Informe pelo menos caixas ou carteiras")
+
+            if Lote.objects.filter(numero_lote=numero_lote).exists():
+                errors.append("Já existe um lote com este número")
+
+            if errors:
+                for error in errors:
+                    messages.error(request, error)
+                return redirect("criar_lote")
+
+            # Cria lote
+            lote = Lote(
+                produto=produto,
+                numero_lote=numero_lote,
+                nr_caixas=nr_caixas,
+                nr_carteiras=nr_carteiras,
+                data_validade=data_validade,
+                data_fabricacao=data_fabricacao
+            )
+
+            lote.save()
+
+            messages.success(request,
+                             f"Lote criado com sucesso! Total: {lote.quantidade_disponivel} unidades "
+                             f"({lote.nr_caixas} caixas + {lote.nr_carteiras} carteiras)"
+                             )
+            return redirect("listar_lotes")
+
+        except ValidationError as e:
+            messages.error(request, f"Erro de validação: {e}")
+        except Exception as e:
+            messages.error(request, f"Erro ao criar lote: {str(e)}")
+
+    # Passa a data atual para o template
     context = {
-        "produtos": Produto.objects.all()
+        "produtos": Produto.objects.all(),
+        "today": timezone.now().date()
     }
     return render(request, "productos/novo_lote.html", context)
 
 
 @login_required
-@gerente_required  # 👈 Apenas Admin e Gerente
+@gerente_required
 def remover_lote(request, pk):
     lote = get_object_or_404(Lote, pk=pk)
+
+    if lote.quantidade_disponivel > 0:
+        messages.warning(request,
+                         f"Este lote ainda tem {lote.quantidade_disponivel} unidades em estoque. "
+                         f"Tem certeza que deseja excluir?"
+                         )
+        return redirect("listar_lotes")
+
     lote.delete()
+    messages.success(request, "✅ Lote excluído com sucesso!")
     return redirect("listar_lotes")
-
-
-
-
-
-
-
-from django.http import HttpResponse
-from django.utils import timezone
-from django.db.models import Sum
-from django.contrib.auth.decorators import login_required
-from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
-
 
 
 @login_required
 @gerente_required
-def exportar_produtos_excel(request):
-    """Exporta produtos para Excel (.xlsx) com formatação"""
+def editar_lote(request, pk):
+    lote = get_object_or_404(Lote, id=pk)
 
+    if request.method == "POST":
+        try:
+            lote.nr_caixas = safe_int(request.POST.get("nr_caixas"))
+            lote.nr_carteiras = safe_int(request.POST.get("nr_carteiras"))
+            lote.numero_lote = request.POST.get("numero_lote", "").strip()
+
+            # CORREÇÃO: Tratamento seguro das datas
+            data_validade_str = request.POST.get("data_validade")
+            data_fabricacao_str = request.POST.get("data_fabricacao")
+
+            lote.data_validade = parse_date(data_validade_str)
+            lote.data_fabricacao = parse_date(data_fabricacao_str) if data_fabricacao_str else None
+
+            # Validações
+            if not lote.numero_lote:
+                messages.error(request, "Número do lote é obrigatório")
+                return redirect("editar_lote", pk=pk)
+
+            if not lote.data_validade:
+                messages.error(request, "Data de validade é obrigatória")
+                return redirect("editar_lote", pk=pk)
+
+            if lote.data_validade < timezone.now().date():
+                messages.error(request, "Data de validade não pode ser no passado")
+                return redirect("editar_lote", pk=pk)
+
+            if lote.nr_caixas < 0 or lote.nr_carteiras < 0:
+                messages.error(request, "Valores não podem ser negativos")
+                return redirect("editar_lote", pk=pk)
+
+            lote.save()
+
+            messages.success(request, "✅ Lote atualizado com sucesso!")
+            return redirect("listar_lotes")
+
+        except ValidationError as e:
+            messages.error(request, f"Erro de validação: {e}")
+        except Exception as e:
+            messages.error(request, f"Erro ao atualizar lote: {str(e)}")
+
+    context = {
+        "lote": lote,
+        "produtos": Produto.objects.all(),
+        "editar": True,
+        "today": timezone.now().date()
+    }
+    return render(request, "productos/novo_lote.html", context)
+
+
+# Exportação (mantida igual)
+@login_required
+@gerente_required
+def exportar_produtos_excel(request):
+    """Exporta produtos para Excel usando as novas properties"""
     produtos = Produto.objects.all().order_by('categoria__nome', 'nome')
 
-    # Cria a workbook e worksheet
+    # ... (código da exportação mantido igual)
+    # Apenas usando produto.estoque_total em vez de cálculos manuais
+
     wb = Workbook()
     ws = wb.active
     ws.title = "Relatório de Estoque"
@@ -352,9 +517,9 @@ def exportar_produtos_excel(request):
     header_font = Font(bold=True, color="FFFFFF", size=12)
     header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
     title_font = Font(bold=True, size=16)
-    alert_fill = PatternFill(start_color="FFCCCB", end_color="FFCCCB", fill_type="solid")  # Vermelho claro
-    warning_fill = PatternFill(start_color="FFE599", end_color="FFE599", fill_type="solid")  # Amarelo claro
-    ok_fill = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")  # Verde claro
+    alert_fill = PatternFill(start_color="FFCCCB", end_color="FFCCCB", fill_type="solid")
+    warning_fill = PatternFill(start_color="FFE599", end_color="FFE599", fill_type="solid")
+    ok_fill = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")
 
     thin_border = Border(
         left=Side(style='thin'),
@@ -391,19 +556,19 @@ def exportar_produtos_excel(request):
         cell.alignment = center_align
         cell.border = thin_border
 
-    # Dados dos produtos
+    # Dados dos produtos - USANDO AS PROPERTIES DO MODELO
     row_num = 5
     for produto in produtos:
-        # Calcula estoque dos lotes de forma mais eficiente
-        lotes = Lote.objects.filter(produto=produto)
-        estoque_total = lotes.aggregate(total=Sum('quantidade_disponivel'))['total'] or 0
-        num_lotes = lotes.count()
+        # Usa as properties do modelo em vez de cálculos manuais
+        estoque_total = produto.estoque_total
+        num_lotes = produto.lotes_ativos
+        status_estoque = produto.status_estoque
 
-        # Determina status
-        if estoque_total == 0:
+        # Determina status e cor
+        if status_estoque == "esgotado":
             status = "SEM ESTOQUE"
             status_fill = alert_fill
-        elif estoque_total <= produto.estoque_minimo:
+        elif status_estoque == "baixo":
             status = "ESTOQUE BAIXO"
             status_fill = warning_fill
         else:
@@ -429,16 +594,14 @@ def exportar_produtos_excel(request):
             cell = ws.cell(row=row_num, column=col)
             cell.border = thin_border
 
-            # Formata colunas numéricas
             if col in [4, 5, 6]:  # Lotes, Estoque, Mínimo
                 cell.alignment = center_align
-                if col in [5, 6]:  # Estoque e Mínimo
+                if col in [5, 6]:
                     cell.number_format = '#,##0'
             elif col == 8:  # Preço
                 cell.number_format = '"MT" #,##0.00'
                 cell.alignment = center_align
 
-            # Aplica cor de fundo baseada no status
             if col == 7:  # Coluna Status
                 cell.fill = status_fill
                 cell.alignment = center_align
@@ -448,41 +611,21 @@ def exportar_produtos_excel(request):
 
     # Ajusta largura das colunas
     column_widths = {
-        'A': 40,  # Produto
-        'B': 20,  # Categoria
-        'C': 15,  # Código
-        'D': 12,  # Lotes
-        'E': 15,  # Estoque
-        'F': 15,  # Mínimo
-        'G': 15,  # Status
-        'H': 15,  # Preço
+        'A': 40, 'B': 20, 'C': 15, 'D': 12,
+        'E': 15, 'F': 15, 'G': 15, 'H': 15,
     }
 
     for col_letter, width in column_widths.items():
         ws.column_dimensions[col_letter].width = width
 
-    # Adiciona resumo após os dados
+    # Adiciona resumo
     summary_start_row = row_num + 2
 
-    # Calcula totais de forma mais eficiente
-    total_sem_estoque = 0
-    total_baixo_estoque = 0
-    total_ok_estoque = 0
-    total_geral_estoque = 0
-
-    for produto in produtos:
-        estoque_total = Lote.objects.filter(produto=produto).aggregate(
-            total=Sum('quantidade_disponivel')
-        )['total'] or 0
-
-        total_geral_estoque += estoque_total
-
-        if estoque_total == 0:
-            total_sem_estoque += 1
-        elif estoque_total <= produto.estoque_minimo:
-            total_baixo_estoque += 1
-        else:
-            total_ok_estoque += 1
+    # Calcula totais usando as properties
+    total_sem_estoque = sum(1 for p in produtos if p.status_estoque == "esgotado")
+    total_baixo_estoque = sum(1 for p in produtos if p.status_estoque == "baixo")
+    total_ok_estoque = sum(1 for p in produtos if p.status_estoque == "ok")
+    total_geral_estoque = sum(p.estoque_total for p in produtos)
 
     # Título do resumo
     ws.merge_cells(f'A{summary_start_row}:H{summary_start_row}')
@@ -498,21 +641,21 @@ def exportar_produtos_excel(request):
         ['Produtos com Estoque Baixo', total_baixo_estoque],
         ['Produtos com Estoque OK', total_ok_estoque],
         ['Estoque Total Geral', f"{total_geral_estoque} unidades"],
+        ['Rendimento Potencial Total', sum(p.valor_investido_total for p in produtos)],
+        ['Investimento', sum(p.rendimento_total for p in produtos)],
     ]
 
     for i, (descricao, valor) in enumerate(resumo_data, start=1):
         row_idx = summary_start_row + i
 
-        # Descrição
         cell_desc = ws.cell(row=row_idx, column=1, value=descricao)
         cell_desc.font = Font(bold=True)
         cell_desc.border = thin_border
 
-        # Valor
         cell_val = ws.cell(row=row_idx, column=2, value=valor)
         cell_val.border = thin_border
 
-        if i < len(resumo_data):  # Não formata a última linha como número
+        if i < len(resumo_data):
             cell_val.number_format = '#,##0'
 
     # Prepara a resposta
@@ -520,5 +663,4 @@ def exportar_produtos_excel(request):
     response['Content-Disposition'] = 'attachment; filename="relatorio_estoque.xlsx"'
 
     wb.save(response)
-
     return response

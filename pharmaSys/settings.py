@@ -41,7 +41,7 @@ SESSION_SAVE_EVERY_REQUEST = True
 # INSTALLED APPS
 # ==========================
 INSTALLED_APPS = [
-    #'import_export',
+    'import_export',
     'django.contrib.admin',
     'django.contrib.humanize',
     'django.contrib.auth',
@@ -111,7 +111,7 @@ if os.environ.get('RAILWAY_ENVIRONMENT') or not DEBUG or POSTGRES_LOCALLY:
     DATABASES['default'] = dj_database_url.parse(
         'postgresql://postgres:aasiGbCkQfTCRDfiMXdyQdNfXGHYynTw@maglev.proxy.rlwy.net:41864/railway'
     )
-    
+
     # Otimizações para PostgreSQL
     DATABASES['default']['CONN_MAX_AGE'] = 600
     DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'

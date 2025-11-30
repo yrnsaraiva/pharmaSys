@@ -1,5 +1,6 @@
 {% extends 'main.html' %}
-{% load auth_tags %}  <!-- 👈 CARREGA AS TAGS DE AUTENTICAÇÃO -->
+{% load auth_tags %}
+-- 👈 CARREGA AS TAGS DE AUTENTICAÇÃO -->
 
 {% block content %}
     {% include 'navbar.html' %}
@@ -91,7 +92,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Buscar Produto</label>
                     <div class="relative">
                         <input class="w-full pl-10 pr-4 py-3 border border-pharmacy-gray rounded-lg focus:ring-2 focus:ring-pharmacy-green focus:border-transparent"
-                               placeholder="Nome ou código de barras..."
+                               placeholder="Nome, código ou princípio ativo..."
                                type="text" value="{{ search }}" name="search">
                         <i class="absolute left-3 top-4 text-gray-400" data-fa-i2svg="">
                             <svg aria-hidden="true" class="svg-inline--fa fa-magnifying-glass" data-fa-i2svg=""
@@ -110,7 +111,7 @@
                             name="categoria">
                         <option value="Todas" {% if categoria == "Todas" %}selected{% endif %}>Todas</option>
                         {% for cat in categorias %}
-                            <option value="{{ cat }}" {% if categoria == cat %}selected{% endif %}>{{ cat }}</option>
+                            <option value="{{ cat.nome }}" {% if categoria == cat.nome %}selected{% endif %}>{{ cat.nome }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -160,25 +161,23 @@
                     <thead class="bg-gray-50 border-b border-pharmacy-gray">
                     <tr>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Nome do Produto
+                            Produto
                         </th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Quatidade de Caixas
+                            Estoque (Unidades)
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Equivalente
                         </th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                             Categoria
                         </th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Preço de Venda
+                            Preço Venda
                         </th>
+
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Quantidade Atual
-                        </th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Validade Mais Próxima
-                        </th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Status de Estoque
+                            Status
                         </th>
                         <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                             Ações
@@ -189,92 +188,123 @@
                     {% for producto in productos %}
                         <tr class="hover:bg-gray-50 transition-colors">
 
-                            <!-- Nome + Categoria -->
+                            <!-- Nome + Informações -->
                             <td class="px-6 py-4">
                                 <div class="text-sm font-semibold text-gray-900">{{ producto.nome }}</div>
-                                <div class="text-sm text-gray-500">{{ producto.categoria.nome }}</div>
+                                <div class="text-xs text-gray-500 mt-1">
+                                    {% if producto.codigo_barras %}
+                                        Cód: {{ producto.codigo_barras }}
+                                    {% endif %}
+                                    {% if producto.principio_ativo %}
+                                        • {{ producto.principio_ativo }}
+                                    {% endif %}
+                                </div>
+                                {% if producto.controlado %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 mt-1">
+                                    ⚠️ Controlado
+                                </span>
+                                {% endif %}
                             </td>
 
-                           <!-- Total de Caixas -->
-                            <td class="px-6 py-4 font-mono text-sm text-gray-700">
-                                {{ producto.total_nr_caixas }} caixa{{ producto.total_nr_caixas|pluralize }}
-                            </td>
-
-                            <!-- Tipo de Categoria -->
+                            <!-- Estoque Total em Unidades -->
                             <td class="px-6 py-4">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    {{ producto.categoria.tipo }}
-                </span>
+                                <div class="text-lg font-bold text-gray-900">{{ producto.estoque_total }}</div>
+                                <div class="text-xs text-gray-500">unidades</div>
+                            </td>
+
+                            <!-- Equivalente em Caixas/Carteiras -->
+                            <td class="px-6 py-4">
+                                {% with caixas_carteiras=producto.estoque_total_caixas_carteiras %}
+                                    <div class="text-sm font-medium text-gray-700">
+                                        {{ caixas_carteiras.0 }} caixa{{ caixas_carteiras.0|pluralize }}
+                                    </div>
+                                    {% if caixas_carteiras.1 > 0 %}
+                                    <div class="text-xs text-gray-500">
+                                        + {{ caixas_carteiras.1 }} carteira{{ caixas_carteiras.1|pluralize }}
+                                    </div>
+                                    {% endif %}
+                                {% endwith %}
+                                {% if producto.carteiras_por_caixa > 1 %}
+                                <div class="text-xs text-gray-400 mt-1">
+                                    {{ producto.carteiras_por_caixa }}/caixa
+                                </div>
+                                {% endif %}
+                            </td>
+
+                            <!-- Categoria -->
+                            <td class="px-6 py-4">
+                                <div class="text-sm font-medium text-gray-900">{{ producto.categoria.nome }}</div>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                                    {% if producto.categoria.tipo == 'medicamento' %}bg-blue-100 text-blue-800
+                                    {% elif producto.categoria.tipo == 'higiene' %}bg-green-100 text-green-800
+                                    {% elif producto.categoria.tipo == 'perfumaria' %}bg-purple-100 text-purple-800
+                                    {% elif producto.categoria.tipo == 'suplemento' %}bg-orange-100 text-orange-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ producto.categoria.get_tipo_display }}
+                                </span>
                             </td>
 
                             <!-- Preço -->
-                            <td class="px-6 py-4 text-sm font-semibold text-gray-900">
-                                {{ producto.preco_venda }} MT
-                            </td>
-
-                            <!-- Estoque total -->
-                            <td class="px-6 py-4 text-sm text-gray-900">
-                                {{ producto.estoque_total }} unidades
-                            </td>
-
-                            <!-- Validade mais próxima -->
-                            <td class="px-6 py-4 text-sm text-gray-900">
-                                {% if producto.validade_mais_proxima %}
-                                    {{ producto.validade_mais_proxima|date:"d/m/Y" }}
-                                {% else %}
-                                    <span class="text-gray-400 italic">Sem validade</span>
+                            <td class="px-6 py-4">
+                                <div class="text-sm font-semibold text-gray-900">
+                                    {{ producto.preco_venda }} MT
+                                </div>
+                                {% if producto.preco_carteira_calculado and producto.carteiras_por_caixa > 1 %}
+                                <div class="text-xs text-gray-500">
+                                    {{ producto.preco_carteira_calculado }} MT/carteira
+                                </div>
                                 {% endif %}
                             </td>
+
+
 
                             <!-- Status de Estoque -->
                             <td class="px-6 py-4">
                                 {% if producto.status_estoque == "esgotado" %}
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                        ❌ Esgotado
-                    </span>
+                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                                        </svg>
+                                        Esgotado
+                                    </span>
                                 {% elif producto.status_estoque == "baixo" %}
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                        ⚠️ Baixo Estoque
-                    </span>
+                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                        </svg>
+                                        Baixo Estoque
+                                    </span>
+                                    <div class="text-xs text-yellow-600 mt-1">
+                                        Mín: {{ producto.estoque_minimo }}
+                                    </div>
                                 {% else %}
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        ✅ OK
-                    </span>
+                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                        </svg>
+                                        OK
+                                    </span>
                                 {% endif %}
                             </td>
 
                             <!-- Ações CONDICIONAIS -->
-                            <td class="px-6 py-4 text-center">
+                            <td class="px-6 py-4">
                                 <div class="flex justify-center space-x-2">
                                     <!-- Botão Editar - Apenas Gerente e Admin -->
                                     {% if user|is_admin or user|is_gerente %}
                                     <a href="{% url 'editar_producto' producto.id %}"
-                                       class="text-blue-500 hover:text-blue-700"
+                                       class="text-blue-500 hover:text-blue-700 transition-colors"
                                        title="Editar produto">
-                                        <i data-fa-i2svg="">
-                                            <svg aria-hidden="true" class="svg-inline--fa fa-pen-to-square"
-                                                 data-fa-i2svg="" data-icon="pen-to-square" data-prefix="fas"
-                                                 focusable="false"
-                                                 role="img" viewBox="0 0 512 512"
-                                                 xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L362.3 51.7l97.9 97.9 30.1-30.1c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L437.7 172.3 339.7 74.3 172.4 241.7zM96 64C43 64 0 107 0 160V416c0 53 43 96 96 96H352c53 0 96-43 96-96V320c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7-14.3 32-32 32H96c-17.7 0-32-14.3-32-32V160c0-17.7 14.3-32 32-32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H96z"
-                                                      fill="currentColor"></path>
-                                            </svg>
-                                        </i>
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+                                        </svg>
                                     </a>
                                     {% else %}
                                     <!-- Ícone desabilitado para Vendedor -->
                                     <span class="text-gray-300 cursor-not-allowed" title="Apenas gerentes e administradores podem editar">
-                                        <i data-fa-i2svg="">
-                                            <svg aria-hidden="true" class="svg-inline--fa fa-pen-to-square"
-                                                 data-fa-i2svg="" data-icon="pen-to-square" data-prefix="fas"
-                                                 focusable="false"
-                                                 role="img" viewBox="0 0 512 512"
-                                                 xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L362.3 51.7l97.9 97.9 30.1-30.1c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L437.7 172.3 339.7 74.3 172.4 241.7zM96 64C43 64 0 107 0 160V416c0 53 43 96 96 96H352c53 0 96-43 96-96V320c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7-14.3 32-32 32H96c-17.7 0-32-14.3-32-32V160c0-17.7 14.3-32 32-32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H96z"
-                                                      fill="currentColor"></path>
-                                            </svg>
-                                        </i>
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+                                        </svg>
                                     </span>
                                     {% endif %}
 
@@ -282,36 +312,18 @@
                                     {% if user|is_admin %}
                                     <a href="{% url 'remover_producto' producto.id %}"
                                        onclick="return confirm('Tem certeza que deseja remover {{ producto.nome }}?');"
-                                       class="text-red-500 hover:text-red-700"
+                                       class="text-red-500 hover:text-red-700 transition-colors"
                                        title="Excluir produto">
-                                        <i data-fa-i2svg="">
-                                            <svg aria-hidden="true" class="svg-inline--fa fa-trash"
-                                                 data-icon="trash" data-prefix="fas" viewBox="0 0 448 512"
-                                                 xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0
-                     32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8
-                     296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416
-                     128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3
-                     0 46.3-19.7 47.9-45L416 128z"
-                                                      fill="currentColor"></path>
-                                            </svg>
-                                        </i>
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                        </svg>
                                     </a>
                                     {% else %}
                                     <!-- Ícone desabilitado para Gerente e Vendedor -->
                                     <span class="text-gray-300 cursor-not-allowed" title="Apenas administradores podem excluir">
-                                        <i data-fa-i2svg="">
-                                            <svg aria-hidden="true" class="svg-inline--fa fa-trash"
-                                                 data-icon="trash" data-prefix="fas" viewBox="0 0 448 512"
-                                                 xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0
-                     32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8
-                     296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416
-                     128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3
-                     0 46.3-19.7 47.9-45L416 128z"
-                                                      fill="currentColor"></path>
-                                            </svg>
-                                        </i>
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                        </svg>
                                     </span>
                                     {% endif %}
                                 </div>
@@ -319,7 +331,13 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="7" class="text-center py-4">Nenhum Producto encontrado.</td>
+                            <td colspan="8" class="text-center py-8 text-gray-500">
+                                <svg class="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m8-8V4a1 1 0 00-1-1h-2a1 1 0 00-1 1v1M9 7h6"/>
+                                </svg>
+                                <p class="mt-2 text-lg font-medium">Nenhum produto encontrado</p>
+                                <p class="text-sm">Tente ajustar os filtros ou adicionar novos produtos</p>
+                            </td>
                         </tr>
                     {% endfor %}
                     </tbody>
@@ -327,6 +345,7 @@
             </div>
         </div>
 
+        <!-- Paginação (mantida igual) -->
         <div class="flex justify-between items-center mt-6" id="pagination">
             <div class="text-sm text-gray-700">
                 Mostrando
@@ -337,7 +356,6 @@
                 <span class="font-medium">{{ page_obj.paginator.count }}</span> produtos
             </div>
 
-            <!-- Botões -->
             <div class="flex space-x-1">
                 {% if page_obj.has_previous %}
                     <a href="?page={{ page_obj.previous_page_number }}"
@@ -346,13 +364,11 @@
                     <span class="px-3 py-1 bg-gray-100 text-gray-400 rounded">Anterior</span>
                 {% endif %}
 
-                <!-- Primeira página -->
                 {% if 1 not in custom_range %}
                     <a href="?page=1" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">1</a>
                     <span class="px-3 py-1">...</span>
                 {% endif %}
 
-                <!-- Range calculado -->
                 {% for num in custom_range %}
                     {% if num == page_obj.number %}
                         <span class="px-3 py-1 bg-green-600 text-white rounded">{{ num }}</span>
@@ -361,7 +377,6 @@
                     {% endif %}
                 {% endfor %}
 
-                <!-- Última página -->
                 {% if page_obj.paginator.num_pages not in custom_range %}
                     <span class="px-3 py-1">...</span>
                     <a href="?page={{ page_obj.paginator.num_pages }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">{{ page_obj.paginator.num_pages }}</a>
