@@ -14,8 +14,4 @@ urlpatterns = [
     path("lote/<int:pk>/editar/", views.editar_lote, name="editar_lote"),  # NOVA URL
     path("lote/<int:pk>/apagar/", views.remover_lote, name="remover_lote"),
     path('exportar-excel-simples/', views.exportar_produtos_excel, name='exportar_produtos_excel'),
-<<<<<<< HEAD
 ]
-=======
-]
->>>>>>> 28c167228ec5c40f635719dd345fcfbbdff503c6
