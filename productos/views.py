@@ -360,67 +360,57 @@ def criar_lote(request):
 
             nr_caixas = safe_int(request.POST.get("nr_caixas"))
             nr_carteiras = safe_int(request.POST.get("nr_carteiras"))
-            numero_lote = request.POST.get("numero_lote", "").strip()
 
-            # CORREÇÃO: Tratamento seguro das datas
-            data_validade_str = request.POST.get("data_validade")
-            data_fabricacao_str = request.POST.get("data_fabricacao")
+            data_validade = parse_date(request.POST.get("data_validade"))
+            data_fabricacao = parse_date(request.POST.get("data_fabricacao")) \
+                if request.POST.get("data_fabricacao") else None
 
-            data_validade = parse_date(data_validade_str)
-            data_fabricacao = parse_date(data_fabricacao_str) if data_fabricacao_str else None
-
-            # Validações
+            # ============================
+            #   VALIDAÇÕES SIMPLIFICADAS
+            # ============================
             errors = []
 
-            if not numero_lote:
-                errors.append("Número do lote é obrigatório")
-
             if not data_validade:
-                errors.append("Data de validade é obrigatória e deve ser uma data válida")
+                errors.append("Data de validade é obrigatória")
             elif data_validade < timezone.now().date():
                 errors.append("Data de validade não pode ser no passado")
 
-            if data_fabricacao and data_validade and data_fabricacao >= data_validade:
-                errors.append("Data de fabricação deve ser anterior à data de validade")
+            if data_fabricacao and data_fabricacao >= data_validade:
+                errors.append("Data de fabricação deve ser antes da validade")
 
             if nr_caixas < 0 or nr_carteiras < 0:
                 errors.append("Valores não podem ser negativos")
 
             if nr_caixas == 0 and nr_carteiras == 0:
-                errors.append("Informe pelo menos caixas ou carteiras")
-
-            if Lote.objects.filter(numero_lote=numero_lote).exists():
-                errors.append("Já existe um lote com este número")
+                errors.append("Informe pelo menos 1 caixa ou 1 carteira")
 
             if errors:
-                for error in errors:
-                    messages.error(request, error)
+                for e in errors:
+                    messages.error(request, e)
                 return redirect("criar_lote")
 
-            # Cria lote
+            # ============================
+            #     CRIA LOTE (AUTO-LOTE)
+            # ============================
             lote = Lote(
                 produto=produto,
-                numero_lote=numero_lote,
                 nr_caixas=nr_caixas,
                 nr_carteiras=nr_carteiras,
                 data_validade=data_validade,
                 data_fabricacao=data_fabricacao
             )
 
-            lote.save()
+            lote.save()  # <-- número do lote é gerado automaticamente aqui
 
             messages.success(request,
-                             f"Lote criado com sucesso! Total: {lote.quantidade_disponivel} unidades "
-                             f"({lote.nr_caixas} caixas + {lote.nr_carteiras} carteiras)"
-                             )
+                             f"Lote {lote.numero_lote} criado com sucesso! "
+                             f"Total: {lote.quantidade_disponivel} unidades")
+
             return redirect("listar_lotes")
 
-        except ValidationError as e:
-            messages.error(request, f"Erro de validação: {e}")
         except Exception as e:
             messages.error(request, f"Erro ao criar lote: {str(e)}")
 
-    # Passa a data atual para o template
     context = {
         "produtos": Produto.objects.all(),
         "today": timezone.now().date()
@@ -444,7 +434,6 @@ def remover_lote(request, pk):
     messages.success(request, "✅ Lote excluído com sucesso!")
     return redirect("listar_lotes")
 
-
 @login_required
 @gerente_required
 def editar_lote(request, pk):
@@ -454,20 +443,14 @@ def editar_lote(request, pk):
         try:
             lote.nr_caixas = safe_int(request.POST.get("nr_caixas"))
             lote.nr_carteiras = safe_int(request.POST.get("nr_carteiras"))
-            lote.numero_lote = request.POST.get("numero_lote", "").strip()
 
-            # CORREÇÃO: Tratamento seguro das datas
-            data_validade_str = request.POST.get("data_validade")
-            data_fabricacao_str = request.POST.get("data_fabricacao")
+            lote.data_validade = parse_date(request.POST.get("data_validade"))
+            lote.data_fabricacao = parse_date(request.POST.get("data_fabricacao")) \
+                if request.POST.get("data_fabricacao") else None
 
-            lote.data_validade = parse_date(data_validade_str)
-            lote.data_fabricacao = parse_date(data_fabricacao_str) if data_fabricacao_str else None
-
-            # Validações
-            if not lote.numero_lote:
-                messages.error(request, "Número do lote é obrigatório")
-                return redirect("editar_lote", pk=pk)
-
+            # ============================
+            #       VALIDAÇÕES
+            # ============================
             if not lote.data_validade:
                 messages.error(request, "Data de validade é obrigatória")
                 return redirect("editar_lote", pk=pk)
@@ -476,17 +459,19 @@ def editar_lote(request, pk):
                 messages.error(request, "Data de validade não pode ser no passado")
                 return redirect("editar_lote", pk=pk)
 
+            if lote.data_fabricacao and lote.data_fabricacao >= lote.data_validade:
+                messages.error(request, "Data de fabricação deve ser antes da validade")
+                return redirect("editar_lote", pk=pk)
+
             if lote.nr_caixas < 0 or lote.nr_carteiras < 0:
                 messages.error(request, "Valores não podem ser negativos")
                 return redirect("editar_lote", pk=pk)
 
             lote.save()
 
-            messages.success(request, "✅ Lote atualizado com sucesso!")
+            messages.success(request, "Lote atualizado com sucesso!")
             return redirect("listar_lotes")
 
-        except ValidationError as e:
-            messages.error(request, f"Erro de validação: {e}")
         except Exception as e:
             messages.error(request, f"Erro ao atualizar lote: {str(e)}")
 
@@ -497,6 +482,8 @@ def editar_lote(request, pk):
         "today": timezone.now().date()
     }
     return render(request, "productos/novo_lote.html", context)
+
+
 
 
 # Exportação (mantida igual)
