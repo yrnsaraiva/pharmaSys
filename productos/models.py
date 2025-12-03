@@ -1,10 +1,9 @@
+from django.db.models import Sum, F
+from decimal import Decimal, ROUND_HALF_UP
+from fornecedores.models import Fornecedor
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Sum, F
-from datetime import date
-from decimal import Decimal, ROUND_HALF_UP
 from django.utils import timezone
-from fornecedores.models import Fornecedor
 
 
 class Categoria(models.Model):
@@ -172,9 +171,11 @@ class Produto(models.Model):
         super().save(*args, **kwargs)
 
 
+
+
 class Lote(models.Model):
     produto = models.ForeignKey(Produto, on_delete=models.CASCADE)
-    numero_lote = models.CharField(max_length=50)
+    numero_lote = models.CharField(max_length=50, editable=False)  # impede edição manual
     nr_caixas = models.PositiveIntegerField(default=0)
     nr_carteiras = models.PositiveIntegerField(default=0)
     quantidade_disponivel = models.PositiveIntegerField(default=0)
@@ -206,17 +207,26 @@ class Lote(models.Model):
 
     @property
     def valor_investido(self):
-        """Quanto gastaste neste lote (custo total)"""
         return self.quantidade_disponivel * self.produto.preco_compra
 
     @property
     def rendimento_potencial(self):
-        """Quanto vais gerar se vender tudo deste lote (receita total)"""
         return self.quantidade_disponivel * self.produto.preco_venda
 
     def save(self, *args, **kwargs):
+
+        # GERAR O NÚMERO DO LOTE AUTOMATICAMENTE NA CRIAÇÃO
+        if not self.pk:
+            prefixo = self.produto.nome[:2].upper()  # Ex: Paracetamol → PA
+            total_lotes = Lote.objects.filter(produto=self.produto).count() + 1
+            self.numero_lote = f"{prefixo}{total_lotes:02d}LT"  # Ex: PA01LT
+
+        # validações
         self.clean()
+
+        # atualizar quantidade disponível
         self.quantidade_disponivel = self.total_unidades
+
         super().save(*args, **kwargs)
 
     def converter_para_caixas_carteiras(self, unidades):
