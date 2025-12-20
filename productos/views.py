@@ -559,19 +559,22 @@ def exportar_produtos_excel(request):
             status = "ESTOQUE OK"
             status_fill = ok_fill
 
-        # Linha com nr_caixas e nr_carteiras
+        nr_caixas = produto.lotes.filter(ativo=True).aggregate(total_caixas=Sum('nr_caixas'))['total_caixas'] or 0
+        nr_carteiras = produto.lotes.filter(ativo=True).aggregate(total_carteiras=Sum('nr_carteiras'))['total_carteiras'] or 0
+        
         row = [
             produto.nome,
             produto.categoria.nome if produto.categoria else 'N/A',
             produto.codigo_barras or 'N/A',
             num_lotes,
-            Lotes.nr_caixas,
-            Lotes.nr_carteiras,
+            nr_caixas,
+            nr_carteiras,
             estoque_total,
             produto.estoque_minimo,
             status,
             float(produto.preco_venda) if produto.preco_venda else 0.0
         ]
+
         ws.append(row)
 
         # Formata a linha
