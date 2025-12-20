@@ -483,9 +483,6 @@ def editar_lote(request, pk):
     }
     return render(request, "productos/novo_lote.html", context)
 
-
-
-
 @login_required
 @gerente_required
 def exportar_produtos_excel(request):
@@ -559,8 +556,9 @@ def exportar_produtos_excel(request):
             status = "ESTOQUE OK"
             status_fill = ok_fill
 
-        nr_caixas = produto.lotes.filter(ativo=True).aggregate(total_caixas=Sum('nr_caixas'))['total_caixas'] or 0
-        nr_carteiras = produto.lotes.filter(ativo=True).aggregate(total_carteiras=Sum('nr_carteiras'))['total_carteiras'] or 0
+        # Soma de caixas e carteiras usando lote_set
+        nr_caixas = produto.lote_set.filter(quantidade_disponivel__gt=0).aggregate(total_caixas=Sum('nr_caixas'))['total_caixas'] or 0
+        nr_carteiras = produto.lote_set.filter(quantidade_disponivel__gt=0).aggregate(total_carteiras=Sum('nr_carteiras'))['total_carteiras'] or 0
         
         row = [
             produto.nome,
@@ -643,3 +641,6 @@ def exportar_produtos_excel(request):
     response['Content-Disposition'] = 'attachment; filename="relatorio_estoque.xlsx"'
     wb.save(response)
     return response
+
+
+
