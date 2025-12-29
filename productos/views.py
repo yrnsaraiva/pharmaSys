@@ -483,11 +483,15 @@ def editar_lote(request, pk):
     }
     return render(request, "productos/novo_lote.html", context)
 
+
+
+
+# Exportação (mantida igual)
 @login_required
 @gerente_required
 def exportar_produtos_excel(request):
-    """Exporta produtos para Excel incluindo nr_caixas e nr_carteiras"""
-    produtos = Produto.objects.all().order_by('categoria__nome', 'nome')
+    """Exporta produtos para Excel usando apenas produtos com lotes disponíveis"""
+    produtos = Produto.objects.filter(lote__quantidade_disponivel__gt=0).distinct().order_by('categoria__nome', 'nome')
 
     wb = Workbook()
     ws = wb.active
@@ -500,38 +504,25 @@ def exportar_produtos_excel(request):
     alert_fill = PatternFill(start_color="FFCCCB", end_color="FFCCCB", fill_type="solid")
     warning_fill = PatternFill(start_color="FFE599", end_color="FFE599", fill_type="solid")
     ok_fill = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")
-
-    thin_border = Border(
-        left=Side(style='thin'),
-        right=Side(style='thin'),
-        top=Side(style='thin'),
-        bottom=Side(style='thin')
-    )
-
+    thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
     center_align = Alignment(horizontal='center', vertical='center')
 
     # Título
-    ws.merge_cells('A1:J1')
+    ws.merge_cells('A1:I1')
     ws['A1'] = "RELATÓRIO DE ESTOQUE - BALANÇO DE PRODUTOS"
     ws['A1'].font = title_font
     ws['A1'].alignment = center_align
-
-    ws.merge_cells('A2:J2')
+    ws.merge_cells('A2:I2')
     ws['A2'] = f"Emitido em: {timezone.now().strftime('%d/%m/%Y às %H:%M')}"
     ws['A2'].alignment = center_align
 
-    ws.append([])  # linha em branco
+    ws.append([])
 
-    # Cabeçalho da tabela com nr_caixas e nr_carteiras
-    headers = [
-        'Produto', 'Categoria', 'Código Barras', 'Lotes Ativos',
-        'Nr Caixas', 'Nr Carteiras', 'Estoque Atual', 'Estoque Mínimo',
-        'Status', 'Preço Venda'
-    ]
+    # Cabeçalho
+    headers = ['Produto', 'Categoria', 'Código Barras', 'Lotes Ativos', 'Estoque Atual', 'Estoque Mínimo', 'Status', 'Preço Venda', 'Rendimento Total']
     ws.append(headers)
 
-    # Formata cabeçalho
-    for col in range(1, len(headers) + 1):
+    for col in range(1, len(headers)+1):
         cell = ws.cell(row=4, column=col)
         cell.font = header_font
         cell.fill = header_fill
@@ -545,7 +536,6 @@ def exportar_produtos_excel(request):
         num_lotes = produto.lotes_ativos
         status_estoque = produto.status_estoque
 
-        # Status e cor
         if status_estoque == "esgotado":
             status = "SEM ESTOQUE"
             status_fill = alert_fill
@@ -556,65 +546,52 @@ def exportar_produtos_excel(request):
             status = "ESTOQUE OK"
             status_fill = ok_fill
 
-        # Soma de caixas e carteiras usando lote_set
-        nr_caixas = produto.lote_set.filter(quantidade_disponivel__gt=0).aggregate(total_caixas=Sum('nr_caixas'))['total_caixas'] or 0
-        nr_carteiras = produto.lote_set.filter(quantidade_disponivel__gt=0).aggregate(total_carteiras=Sum('nr_carteiras'))['total_carteiras'] or 0
-        
         row = [
             produto.nome,
             produto.categoria.nome if produto.categoria else 'N/A',
             produto.codigo_barras or 'N/A',
             num_lotes,
-            nr_caixas,
-            nr_carteiras,
             estoque_total,
             produto.estoque_minimo,
             status,
-            float(produto.preco_venda) if produto.preco_venda else 0.0
+            float(produto.preco_venda) if produto.preco_venda else 0.0,
+            float(produto.rendimento_total)  # Rendimento Total só dos lotes disponíveis
         ]
-
         ws.append(row)
 
-        # Formata a linha
-        for col in range(1, len(row) + 1):
+        for col in range(1, len(row)+1):
             cell = ws.cell(row=row_num, column=col)
             cell.border = thin_border
-
-            if col in [4,5,6,7,8]:  # Lotes, caixas, carteiras, estoque, mínimo
+            if col in [4,5,6]:
                 cell.alignment = center_align
-                if col in [7,8]:
+                if col in [5,6]:
                     cell.number_format = '#,##0'
-            elif col == 10:  # Preço
+            elif col in [8,9]:
                 cell.number_format = '"MT" #,##0.00'
                 cell.alignment = center_align
-
-            if col == 9:  # Status
+            if col == 7:
                 cell.fill = status_fill
-                cell.alignment = center_align
                 cell.font = Font(bold=True)
-
+                cell.alignment = center_align
         row_num += 1
 
     # Ajusta largura das colunas
-    column_widths = {
-        'A': 40, 'B': 20, 'C': 15, 'D': 12, 'E': 10, 'F': 12,
-        'G': 15, 'H': 15, 'I': 15, 'J': 15
-    }
+    column_widths = {'A':40,'B':20,'C':15,'D':12,'E':15,'F':15,'G':15,'H':15,'I':20}
     for col_letter, width in column_widths.items():
         ws.column_dimensions[col_letter].width = width
 
-    # Resumo do estoque
+    # Resumo
     summary_start_row = row_num + 2
-    ws.merge_cells(f'A{summary_start_row}:J{summary_start_row}')
-    ws[f'A{summary_start_row}'] = "RESUMO DO ESTOQUE"
-    ws[f'A{summary_start_row}'].font = Font(bold=True, size=12)
-    ws[f'A{summary_start_row}'].fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
-    ws[f'A{summary_start_row}'].alignment = center_align
-
     total_sem_estoque = sum(1 for p in produtos if p.status_estoque == "esgotado")
     total_baixo_estoque = sum(1 for p in produtos if p.status_estoque == "baixo")
     total_ok_estoque = sum(1 for p in produtos if p.status_estoque == "ok")
     total_geral_estoque = sum(p.estoque_total for p in produtos)
+
+    ws.merge_cells(f'A{summary_start_row}:I{summary_start_row}')
+    ws[f'A{summary_start_row}'] = "RESUMO DO ESTOQUE"
+    ws[f'A{summary_start_row}'].font = Font(bold=True, size=12)
+    ws[f'A{summary_start_row}'].fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+    ws[f'A{summary_start_row}'].alignment = center_align
 
     resumo_data = [
         ['Total de Produtos', len(produtos)],
@@ -623,10 +600,10 @@ def exportar_produtos_excel(request):
         ['Produtos com Estoque OK', total_ok_estoque],
         ['Estoque Total Geral', f"{total_geral_estoque} unidades"],
         ['Rendimento Potencial Total', sum(p.valor_investido_total for p in produtos)],
-        ['Investimento', sum(p.rendimento_total for p in produtos)],
+        ['Investimento Total', sum(p.rendimento_total for p in produtos)],
     ]
 
-    for i, (descricao, valor) in enumerate(resumo_data, start=1):
+    for i,(descricao, valor) in enumerate(resumo_data,start=1):
         row_idx = summary_start_row + i
         cell_desc = ws.cell(row=row_idx, column=1, value=descricao)
         cell_desc.font = Font(bold=True)
@@ -636,11 +613,8 @@ def exportar_produtos_excel(request):
         if i < len(resumo_data):
             cell_val.number_format = '#,##0'
 
-    # Prepara resposta
+    # Resposta
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename="relatorio_estoque.xlsx"'
     wb.save(response)
     return response
-
-
-
