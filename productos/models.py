@@ -209,23 +209,35 @@ class Lote(models.Model):
     def valor_investido(self):
         return self.quantidade_disponivel * self.produto.preco_compra
 
+
     @property
     def rendimento_potencial(self):
-        return self.quantidade_disponivel * self.produto.preco_venda
+        """
+        Rendimento potencial do lote:
+        (preço da caixa × número de caixas) + (preço da carteira × número de carteiras)
+        """
+        preco_caixa = self.produto.preco_venda
+        preco_carteira = self.produto.preco_carteira_calculado or 0
+        return (self.nr_caixas * preco_caixa) + (self.nr_carteiras * preco_carteira)
 
     def save(self, *args, **kwargs):
-
         # GERAR O NÚMERO DO LOTE AUTOMATICAMENTE NA CRIAÇÃO
         if not self.pk:
-            prefixo = self.produto.nome[:2].upper()  # Ex: Paracetamol → PA
+            prefixo = self.produto.nome[:3].upper()  # Ex: Paracetamol → PA
+            hoje = timezone.now().date()
+            ano = hoje.strftime("%Y")
+            mes = hoje.strftime("%m")
             total_lotes = Lote.objects.filter(produto=self.produto).count() + 1
-            self.numero_lote = f"{prefixo}{total_lotes:02d}LT"  # Ex: PA01LT
+            sequencia = f"{total_lotes:02d}"
+            self.numero_lote = f"{prefixo}{ano}{mes}{sequencia}LT"  # Ex: PA20251201LT
 
         # validações
         self.clean()
 
-        # atualizar quantidade disponível
-        self.quantidade_disponivel = self.total_unidades
+        # atualizar quantidade disponível (se tiver campo no modelo)
+        if hasattr(self, 'quantidade_disponivel'):
+            self.quantidade_disponivel = (self.nr_caixas * getattr(self.produto, 'carteiras_por_caixa',
+                                                                   1)) + self.nr_carteiras
 
         super().save(*args, **kwargs)
 
