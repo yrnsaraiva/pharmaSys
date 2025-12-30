@@ -207,7 +207,7 @@ class Lote(models.Model):
 
     @property
     def valor_investido(self):
-        return self.quantidade_disponivel * self.produto.preco_compra
+        return self.nr_caixas * self.produto.preco_compra
 
 
     @property
