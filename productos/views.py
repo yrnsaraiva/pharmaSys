@@ -599,8 +599,8 @@ def exportar_produtos_excel(request):
         ['Produtos com Estoque Baixo', total_baixo_estoque],
         ['Produtos com Estoque OK', total_ok_estoque],
         ['Estoque Total Geral', f"{total_geral_estoque} unidades"],
-         ['Rendimento Potencial Total', sum(p.rendimento_total for p in produtos)],
-        ['Investimento Total', sum(p.rendimento_total for p in produtos)],
+        ['Rendimento Potencial Total', sum(p.rendimento_total for p in produtos)],
+        ['Investimento Total', sum(p.valor_investido_total for p in produtos)],
     ]
 
     for i,(descricao, valor) in enumerate(resumo_data,start=1):
