@@ -422,18 +422,10 @@ def criar_lote(request):
 @gerente_required
 def remover_lote(request, pk):
     lote = get_object_or_404(Lote, pk=pk)
-
-    if lote.quantidade_disponivel > 0:
-        messages.warning(request,
-                         f"Este lote ainda tem {lote.quantidade_disponivel} unidades em estoque. "
-                         f"Tem certeza que deseja excluir?"
-                         )
-        return redirect("listar_lotes")
-
-    lote.delete()
-    messages.success(request, "✅ Lote excluído com sucesso!")
+    lote.delete()  # Apaga o lote diretamente
+    messages.success(request, f"✅ Lote '{lote.numero_lote}' do produto '{lote.produto.nome}' foi excluído com sucesso!")
     return redirect("listar_lotes")
-
+    
 @login_required
 @gerente_required
 def editar_lote(request, pk):
