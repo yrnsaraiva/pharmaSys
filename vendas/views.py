@@ -404,7 +404,7 @@ def imprimir_recibo_imagem(request, venda_id):
     except IOError:
         font = ImageFont.load_default()
 
-    largura = 1080
+    largura = 400
     altura_texto = 0
     draw = ImageDraw.Draw(Image.new("RGB", (largura, 1)))
 
