@@ -415,7 +415,7 @@ def imprimir_recibo_imagem(request, venda_id):
     altura = max(altura_texto, 100)
     img = Image.new("RGB", (largura, altura), "white")
     draw = ImageDraw.Draw(img)
-    draw.multiline_text((0, 10), recibo_texto,fill="black", font=font, spacing=4)
+    draw.multiline_text((10, 10), recibo_texto,fill="black", font=font, spacing=4)
 
 
     buffer = io.BytesIO()
