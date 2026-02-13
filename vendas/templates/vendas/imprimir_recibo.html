@@ -10,13 +10,19 @@
             margin: 0;
         }
         img {
-            max-width: 100%;
+            width: 500px; /* largura padrão de impressora térmica */
             height: auto;
+            margin: 0 auto;
+        }
+        @media print {
+            body {
+                margin: 0;
+            }
         }
     </style>
     <script>
         window.onload = function() {
-            window.print();
+            setTimeout(() => window.print(),500);
         };
     </script>
 </head>
