@@ -394,17 +394,17 @@ def detalhes_venda(request, venda_id):
         'venda': venda,
         'itens': itens
     })
-
+    
 def imprimir_recibo_imagem(request, venda_id):
     venda = get_object_or_404(Venda, id=venda_id)
     recibo_texto = render_to_string('vendas/recibo_termico.txt', {'venda': venda})
 
     try:
-        font = ImageFont.truetype("Courier", 17)
+        font = ImageFont.truetype("Courier", 20)
     except IOError:
         font = ImageFont.load_default()
 
-    largura = 400
+    largura = 250
     altura_texto = 0
     draw = ImageDraw.Draw(Image.new("RGB", (largura, 1)))
 
@@ -412,11 +412,10 @@ def imprimir_recibo_imagem(request, venda_id):
         _, _, _, altura_linha = draw.textbbox((0, 0), linha, font=font)
         altura_texto += altura_linha + 6
 
-    altura = max(altura_texto, 100)
+    altura = max(altura_texto,500)
     img = Image.new("RGB", (largura, altura), "white")
     draw = ImageDraw.Draw(img)
-    draw.multiline_text((10, 10), recibo_texto,fill="black", font=font, spacing=4)
-
+    draw.multiline_text((5, 0), recibo_texto, fill="black", font=font, spacing=4)
 
     buffer = io.BytesIO()
     img.save(buffer, format="PNG")
