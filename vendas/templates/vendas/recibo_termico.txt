@@ -2,32 +2,28 @@
 FARMACIA JONDE
 401882677
 Av. Samora Machel N.360
-Email.: farmaciajonde@gmail.com
-Cel.: +258 85 324 4412
+Email: farmaciajonde@gmail.com
+Cel: +258 85 324 4412
 
 Cli.: {{ venda.cliente.nome }}
       {{ venda.cliente.telefone }}
 
-VD          N.{{venda.id}}
-
+VD N.{{ venda.id }}
 Data: {{ venda.data_venda|date:"d/m/Y H:i" }}
-
-Total:              {{ venda.total }}MT
-
 MP: {{ venda.get_forma_pagamento_display }}
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-Descricao                        quant.                         Total
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Total: {{ venda.total|stringformat:".0f" }}MT
+
+------------------------------------------------------------------------------------------
+DESCRICAO                          QTD                   TOTAL
+------------------------------------------------------------------------------------------
 {% for item in venda.itens.all %}
-{{ item.produto.nome|ljust:20 }} {{ item.quantidade|stringformat:"3d" }}                          {{ item.subtotal|stringformat:".2f" }}
+{% for linha in item.produto.nome|wrap_chars:10 %}
+{{ linha|ljust:15 }}                 {% if forloop.first %}              {{ item.quantidade|stringformat:"3d" }}              {{ item.subtotal|stringformat:".0f" }}MT{% endif %}
 {% endfor %}
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-Total:                                                               {{ venda.total }}MT
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-                                IVA INCLUSO
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+{% endfor %}
+------------------------------------------------------------------------------------------
+TOTAL:                                                    {{ venda.total|stringformat:".0f" }}MT
+IVA INCLUSO
+------------------------------------------------------------------------------------------
 Vendedor: {{ venda.atendente }}
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+------------------------------------------------------------------------------------------
