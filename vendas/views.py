@@ -399,24 +399,33 @@ def imprimir_recibo_imagem(request, venda_id):
     venda = get_object_or_404(Venda, id=venda_id)
     recibo_texto = render_to_string('vendas/recibo_termico.txt', {'venda': venda})
 
+    # Ajuste do tamanho da fonte e cálculo da altura
     try:
-        font = ImageFont.truetype("Courier", 20)
+        font = ImageFont.truetype("Courier", 17)
+        # font = ImageFont.load_default(size=18)
     except IOError:
-        font = ImageFont.load_default()
+        font = ImageFont.load_default(size=18)
 
-    largura = 250
+    # Calcular a altura da imagem com base no texto
+    largura = 400
     altura_texto = 0
-    draw = ImageDraw.Draw(Image.new("RGB", (largura, 1)))
+    draw = ImageDraw.Draw(Image.new("RGB", (largura, 1)))  # Usar uma imagem temporária para medir o texto
 
+    # Usar textbbox para calcular o tamanho do texto
     for linha in recibo_texto.split('\n'):
-        _, _, _, altura_linha = draw.textbbox((0, 0), linha, font=font)
-        altura_texto += altura_linha + 6
+        _, _, _, altura_linha = draw.textbbox((0, 0), linha, font=font)  # Retorna as coordenadas da caixa delimitadora
+        altura_texto += altura_linha + 6  # +4 para o espaçamento entre as linhas
 
-    altura = max(altura_texto,500)
+    altura = max(altura_texto, 100)  # Garantir que a altura mínima seja 100px
+
+    # Criar a imagem com a altura calculada
     img = Image.new("RGB", (largura, altura), "white")
     draw = ImageDraw.Draw(img)
-    draw.multiline_text((5, 0), recibo_texto, fill="black", font=font, spacing=4)
 
+    # Desenhar o texto
+    draw.multiline_text((10, 10), recibo_texto, fill="black", font=font, spacing=4)
+
+    # Salvar a imagem em Base64 para exibir no HTML
     buffer = io.BytesIO()
     img.save(buffer, format="PNG")
     buffer.seek(0)
