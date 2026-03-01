@@ -1,3 +1,4 @@
+import os
 from django.shortcuts import render, redirect, get_object_or_404
 from django.forms.models import model_to_dict
 from django.contrib import messages
@@ -15,15 +16,9 @@ from PIL import Image, ImageDraw, ImageFont
 import io
 import base64
 
+from pharmaSys import settings
 from .models import Produto, Venda, ItemVenda, Cliente, Lote
 from core.decorators import admin_required, gerente_required, vendedor_required
-import os
-import io
-import base64
-from PIL import Image, ImageDraw, ImageFont
-from django.conf import settings
-from django.shortcuts import get_object_or_404, render
-from django.template.loader import render_to_string
 
 
 @login_required
@@ -401,6 +396,8 @@ def detalhes_venda(request, venda_id):
         'venda': venda,
         'itens': itens
     })
+
+
 def imprimir_recibo_imagem(request, venda_id):
     venda = get_object_or_404(Venda, id=venda_id)
     recibo_texto = render_to_string('vendas/recibo_termico.txt', {'venda': venda})
@@ -408,7 +405,7 @@ def imprimir_recibo_imagem(request, venda_id):
     try:
         font = ImageFont.truetype("Courier", 17)
     except IOError:
-        font = ImageFont.load_default()
+        font = ImageFont.load_default(size=18)
 
     largura = 400
     altura_texto = 0
@@ -421,10 +418,10 @@ def imprimir_recibo_imagem(request, venda_id):
     # 🔹 CARREGAR LOGO
     logo_path = os.path.join(settings.BASE_DIR, 'core/static/img/logo.png')
     logo = Image.open(logo_path).convert("RGB")
-    logo.thumbnail((200, 200))  # reduz se for grande
+    logo.thumbnail((200, 200))
 
     # 🔹 Aumentar altura para caber o logo
-    altura = max(altura_texto + logo.height + 30, 150)
+    altura = max(altura_texto, 100)
 
     img = Image.new("RGB", (largura, altura), "white")
     draw = ImageDraw.Draw(img)
@@ -441,6 +438,6 @@ def imprimir_recibo_imagem(request, venda_id):
     buffer.seek(0)
     img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
 
-    return render(request, 'vendas/imprimir_recibo.html', {'img_base64': img_base64})    
+    return render(request, 'vendas/imprimir_recibo.html', {'img_base64': img_base64})
 
 
