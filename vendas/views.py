@@ -401,57 +401,46 @@ def detalhes_venda(request, venda_id):
         'venda': venda,
         'itens': itens
     })
-    
-
-
 def imprimir_recibo_imagem(request, venda_id):
     venda = get_object_or_404(Venda, id=venda_id)
     recibo_texto = render_to_string('vendas/recibo_termico.txt', {'venda': venda})
 
-    largura = 400
-
-    # 🔹 Fonte
     try:
-        font = ImageFont.truetype("cour.ttf", 17)
-    except:
+        font = ImageFont.truetype("Courier", 17)
+    except IOError:
         font = ImageFont.load_default()
 
-    # 🔹 Carregar logo
-    logo_path = os.path.join(settings.BASE_DIR, 'core/static/img/logo.png')
-    logo = Image.open(logo_path).convert("RGB")
-    logo.thumbnail((200, 200))  # reduzir tamanho se for grande
-
-    # 🔹 Medir altura do texto
-    temp_img = Image.new("RGB", (largura, 1))
-    draw_temp = ImageDraw.Draw(temp_img)
-
+    largura = 400
     altura_texto = 0
+    draw = ImageDraw.Draw(Image.new("RGB", (largura, 1)))
+
     for linha in recibo_texto.split('\n'):
-        bbox = draw_temp.textbbox((0, 0), linha, font=font)
-        altura_linha = bbox[3] - bbox[1]
+        _, _, _, altura_linha = draw.textbbox((0, 0), linha, font=font)
         altura_texto += altura_linha + 6
 
-    # 🔹 Altura total = logo + espaço + texto
-    altura_total = logo.height + 20 + altura_texto + 20
+    # 🔹 CARREGAR LOGO
+    logo_path = os.path.join(settings.BASE_DIR, 'core/static/img/logo.png')
+    logo = Image.open(logo_path).convert("RGB")
+    logo.thumbnail((200, 200))  # reduz se for grande
 
-    # 🔹 Criar imagem final
-    img = Image.new("RGB", (largura, altura_total), "white")
+    # 🔹 Aumentar altura para caber o logo
+    altura = max(altura_texto + logo.height + 30, 150)
+
+    img = Image.new("RGB", (largura, altura), "white")
     draw = ImageDraw.Draw(img)
 
     # 🔹 Centralizar logo
     x_logo = (largura - logo.width) // 2
     img.paste(logo, (x_logo, 10))
 
-    # 🔹 Desenhar texto abaixo do logo
-    y_texto = logo.height + 20
-    draw.multiline_text((10, y_texto), recibo_texto, fill="black", font=font, spacing=4)
+    # 🔹 Texto começa abaixo do logo
+    draw.multiline_text((10, logo.height + 20), recibo_texto, fill="black", font=font, spacing=4)
 
-    # 🔹 Converter para Base64
     buffer = io.BytesIO()
     img.save(buffer, format="PNG")
     buffer.seek(0)
     img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
 
-    return render(request, 'vendas/imprimir_recibo.html', {
-        'img_base64': img_base64
-    })
+    return render(request, 'vendas/imprimir_recibo.html', {'img_base64': img_base64})    
+
+
