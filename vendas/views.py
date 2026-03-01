@@ -17,6 +17,13 @@ import base64
 
 from .models import Produto, Venda, ItemVenda, Cliente, Lote
 from core.decorators import admin_required, gerente_required, vendedor_required
+import os
+import io
+import base64
+from PIL import Image, ImageDraw, ImageFont
+from django.conf import settings
+from django.shortcuts import get_object_or_404, render
+from django.template.loader import render_to_string
 
 
 @login_required
@@ -395,40 +402,56 @@ def detalhes_venda(request, venda_id):
         'itens': itens
     })
     
+
+
 def imprimir_recibo_imagem(request, venda_id):
     venda = get_object_or_404(Venda, id=venda_id)
     recibo_texto = render_to_string('vendas/recibo_termico.txt', {'venda': venda})
 
-    # Ajuste do tamanho da fonte e cálculo da altura
-    try:
-        font = ImageFont.truetype("Courier", 17)
-        # font = ImageFont.load_default(size=18)
-    except IOError:
-        font = ImageFont.load_default(size=18)
-
-    # Calcular a altura da imagem com base no texto
     largura = 400
+
+    # 🔹 Fonte
+    try:
+        font = ImageFont.truetype("cour.ttf", 17)
+    except:
+        font = ImageFont.load_default()
+
+    # 🔹 Carregar logo
+    logo_path = os.path.join(settings.BASE_DIR, 'core/static/img/logo.png')
+    logo = Image.open(logo_path).convert("RGB")
+    logo.thumbnail((200, 200))  # reduzir tamanho se for grande
+
+    # 🔹 Medir altura do texto
+    temp_img = Image.new("RGB", (largura, 1))
+    draw_temp = ImageDraw.Draw(temp_img)
+
     altura_texto = 0
-    draw = ImageDraw.Draw(Image.new("RGB", (largura, 1)))  # Usar uma imagem temporária para medir o texto
-
-    # Usar textbbox para calcular o tamanho do texto
     for linha in recibo_texto.split('\n'):
-        _, _, _, altura_linha = draw.textbbox((0, 0), linha, font=font)  # Retorna as coordenadas da caixa delimitadora
-        altura_texto += altura_linha + 6  # +4 para o espaçamento entre as linhas
+        bbox = draw_temp.textbbox((0, 0), linha, font=font)
+        altura_linha = bbox[3] - bbox[1]
+        altura_texto += altura_linha + 6
 
-    altura = max(altura_texto, 100)  # Garantir que a altura mínima seja 100px
+    # 🔹 Altura total = logo + espaço + texto
+    altura_total = logo.height + 20 + altura_texto + 20
 
-    # Criar a imagem com a altura calculada
-    img = Image.new("RGB", (largura, altura), "white")
+    # 🔹 Criar imagem final
+    img = Image.new("RGB", (largura, altura_total), "white")
     draw = ImageDraw.Draw(img)
 
-    # Desenhar o texto
-    draw.multiline_text((10, 10), recibo_texto, fill="black", font=font, spacing=4)
+    # 🔹 Centralizar logo
+    x_logo = (largura - logo.width) // 2
+    img.paste(logo, (x_logo, 10))
 
-    # Salvar a imagem em Base64 para exibir no HTML
+    # 🔹 Desenhar texto abaixo do logo
+    y_texto = logo.height + 20
+    draw.multiline_text((10, y_texto), recibo_texto, fill="black", font=font, spacing=4)
+
+    # 🔹 Converter para Base64
     buffer = io.BytesIO()
     img.save(buffer, format="PNG")
     buffer.seek(0)
     img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
 
-    return render(request, 'vendas/imprimir_recibo.html', {'img_base64': img_base64})
+    return render(request, 'vendas/imprimir_recibo.html', {
+        'img_base64': img_base64
+    })
