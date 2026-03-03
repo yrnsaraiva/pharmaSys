@@ -75,15 +75,34 @@ def listar_vendas(request):
 def criar_venda(request):
     formas_pagamento = Venda.FORMA_PAGAMENTO_CHOICES
     clientes = Cliente.objects.all().order_by('nome')
-
+    
     # ✅ USANDO AS PROPERTIES DO MODELO
     # Buscar todos os produtos
     todos_produtos = Produto.objects.all().order_by('nome')
-
+    
     # Filtrar apenas os que têm estoque disponível (usando a property)
     produtos = [p for p in todos_produtos if p.tem_estoque]
-
-
+    
+    # ✅ ALERTA: Produtos com lotes vencidos (usando a property)
+    produtos_com_vencido = [p for p in todos_produtos if p.tem_vencido]
+    
+    if produtos_com_vencido:
+        nomes = [p.nome for p in produtos_com_vencido[:5]]
+        total_unidades_vencidas = sum(p.estoque_vencido for p in produtos_com_vencido)
+        
+        mensagem = (
+            f"⚠️ ATENÇÃO: {len(produtos_com_vencido)} produtos têm lotes vencidos "
+            f"({total_unidades_vencidas} unidades)"
+        )
+        if nomes:
+            mensagem += f" (ex: {', '.join(nomes)}{'...' if len(produtos_com_vencido) > 5 else ''})"
+        
+        # Apenas gerentes/admin veem este alerta
+        if request.user.groups.filter(name__in=['Gerente', 'Administrador']).exists():
+            messages.warning(request, mensagem + " - Gerencie os lotes vencidos no estoque.")
+        else:
+            # Para vendedores, mensagem mais simples
+            messages.info(request, "Alguns produtos estão indisponíveis devido à validade vencida.")
 
     cart = request.session.get('cart', [])
     total = 0
@@ -97,13 +116,13 @@ def criar_venda(request):
         if produto_id:
             try:
                 produto = Produto.objects.get(id=produto_id)
-
+                
                 # ✅ USANDO A PROPERTY DO MODELO
                 estoque_disponivel = produto.estoque_disponivel
 
                 if estoque_disponivel == 0:
                     messages.error(
-                        request,
+                        request, 
                         f'❌ Produto {produto.nome} sem estoque válido disponível!'
                     )
                     return redirect('criar_venda')
@@ -126,7 +145,7 @@ def criar_venda(request):
                         messages.success(request, f'✅ Quantidade de {produto.nome} atualizada para {nova_quantidade}!')
                     else:
                         messages.error(
-                            request,
+                            request, 
                             f'❌ Estoque insuficiente! Disponível: {estoque_disponivel} '
                             f'{"⚠️ Lotes vencidos não contabilizados" if produto.tem_vencido else ""}'
                         )
@@ -155,18 +174,18 @@ def criar_venda(request):
 
                     if quantidade <= estoque_disponivel:
                         cart.append(produto_dict)
-
+                        
                         # ✅ ALERTA DE VALIDADE PRÓXIMA
                         if produto.alerta_validade:
                             messages.info(
-                                request,
+                                request, 
                                 f"ℹ️ {produto.nome}: {produto.alerta_validade}"
                             )
-
+                        
                         messages.success(request, f'✅ Produto {produto.nome} adicionado ao carrinho!')
                     else:
                         messages.error(
-                            request,
+                            request, 
                             f'❌ Estoque insuficiente! Disponível: {estoque_disponivel} '
                             f'{"⚠️ Lotes vencidos não contabilizados" if produto.tem_vencido else ""}'
                         )
@@ -191,7 +210,8 @@ def criar_venda(request):
 
     # ✅ Informações adicionais para o template
     total_produtos = len(produtos)
-
+    total_com_vencido = len(produtos_com_vencido)
+    total_unidades_vencidas = sum(p.estoque_vencido for p in produtos_com_vencido)
 
     context = {
         'cart': cart,
@@ -201,6 +221,10 @@ def criar_venda(request):
         'formas_pagamento': formas_pagamento,
         'clientes': clientes,
         'total_produtos_disponiveis': total_produtos,
+        'total_produtos_vencidos': total_com_vencido,
+        'total_unidades_vencidas': total_unidades_vencidas,
+        'tem_produtos_vencidos': total_com_vencido > 0,
+        
         # ✅ Para o template saber se deve mostrar alertas detalhados
         'is_gerente_ou_admin': request.user.groups.filter(
             name__in=['Gerente', 'Administrador']
@@ -208,7 +232,6 @@ def criar_venda(request):
     }
 
     return render(request, 'vendas/criar_venda.html', context)
-
 
 
 
