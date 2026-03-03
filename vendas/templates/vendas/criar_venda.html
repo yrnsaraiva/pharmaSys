@@ -78,7 +78,6 @@
                 <div class="lg:col-span-2" id="sale-items-section">
                     <div class="bg-white rounded-xl shadow-sm border border-pharmacy-gray p-6 mb-6"
                          id="barcode-scanner">
-                        <!-- ✅ CORREÇÃO: Formulário Único para adicionar produtos -->
                         <form method="POST" action="{% url 'criar_venda' %}" id="add-product-form">
                             {% csrf_token %}
                             <div class="flex items-center space-x-4">
@@ -98,7 +97,7 @@
                                                         data-preco-carteira="{{ produto.preco_carteira_calculado|default:0 }}"
                                                         data-carteiras-caixa="{{ produto.carteiras_por_caixa|default:1 }}">
                                                     {{ produto.nome }} - {{ produto.codigo_barras|default:"Sem código" }}
-                                                    (Estoque: {{ produto.estoque_total|default:0 }})
+                                                    (Estoque: {{ produto.estoque_disponivel|default:0 }})
                                                 </option>
                                                 {% endif %}
                                             {% empty %}
@@ -191,7 +190,6 @@
                                                 {{ produto.unidade|default:"carteira" }}
                                             </td>
                                             <td class="px-6 py-4 text-center">
-                                                <!-- ✅ CORREÇÃO: Formulário separado para atualizar quantidade -->
                                                 <form method="POST" action="{% url 'atualizar_quantidade' produto.id %}"
                                                       class="flex items-center justify-center space-x-2">
                                                     {% csrf_token %}
@@ -288,7 +286,6 @@
                         <div class="mb-6" id="sale-info">
                             <h3 class="text-lg font-semibold text-gray-900 mb-4">Informações da Venda</h3>
 
-                        <!-- ✅ CORREÇÃO: Seleção de Cliente com Pesquisa Avançada -->
                             <div class="mb-4">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
                                     Cliente
@@ -309,7 +306,6 @@
 
                                 <!-- Lista de resultados da pesquisa -->
                                 <div id="cliente-results" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                                    <!-- Resultados aparecerão aqui via JavaScript -->
                                 </div>
 
                                 <!-- Select original (agora hidden) -->
@@ -348,7 +344,7 @@
                                     </div>
                                 </div>
 
-                                <!-- Botão para adicionar novo cliente (agora abre modal) -->
+                                <!-- Botão para adicionar novo cliente -->
                                 <div class="mt-3">
                                     <button type="button"
                                             onclick="abrirModalCliente()"
@@ -563,7 +559,7 @@
         limparSelecaoCliente();
     }
 
-    // ✅ Prevenir duplo clique no formulário de produtos
+    // Prevenir duplo clique no formulário de produtos
     let isAdding = false;
     const addProductForm = document.getElementById('add-product-form');
     const addProductBtn = document.getElementById('add-product-btn');
@@ -593,7 +589,7 @@
         });
     }
 
-    // ✅ Configurar o formulário do modal para fazer submit
+    // Configurar o formulário do modal para fazer submit
     const formNovoCliente = document.getElementById('form-novo-cliente');
     if (formNovoCliente) {
         formNovoCliente.addEventListener('submit', async function(e) {
@@ -659,7 +655,7 @@
         {% endfor %}
     });
 
-    // ✅ Funções globais para controlar o modal
+    // Funções globais para controlar o modal
     function abrirModalCliente() {
         const modal = document.getElementById('clienteModal');
         if (modal) {
@@ -677,7 +673,7 @@
         }
     }
 
-    // ✅ Fechar modal ao clicar fora (deve estar fora do DOMContentLoaded)
+    // Fechar modal ao clicar fora
     document.addEventListener('click', function(e) {
         const modal = document.getElementById('clienteModal');
         if (e.target === modal) {
@@ -685,14 +681,14 @@
         }
     });
 
-    // ✅ Fechar modal com tecla Escape (deve estar fora do DOMContentLoaded)
+    // Fechar modal com tecla Escape
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             fecharModalCliente();
         }
     });
 
-    // ✅ Select2 initialization (mantenha como está)
+    // Select2 initialization (mantenha como está)
     $(document).ready(function () {
         $('#produto-select').select2({
             placeholder: 'Selecione ou busque um produto',
