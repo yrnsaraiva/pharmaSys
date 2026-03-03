@@ -1,4 +1,6 @@
 import os
+
+from django.core.exceptions import ValidationError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.forms.models import model_to_dict
 from django.contrib import messages
@@ -68,15 +70,20 @@ def listar_vendas(request):
     return render(request, 'vendas/listar_vendas.html', context)
 
 
-
-
-
 @login_required
 @vendedor_required
 def criar_venda(request):
     formas_pagamento = Venda.FORMA_PAGAMENTO_CHOICES
     clientes = Cliente.objects.all().order_by('nome')
-    productos = Produto.objects.all().order_by('nome')
+
+    # ✅ USANDO AS PROPERTIES DO MODELO
+    # Buscar todos os produtos
+    todos_produtos = Produto.objects.all().order_by('nome')
+
+    # Filtrar apenas os que têm estoque disponível (usando a property)
+    produtos = [p for p in todos_produtos if p.tem_estoque]
+
+
 
     cart = request.session.get('cart', [])
     total = 0
@@ -90,7 +97,16 @@ def criar_venda(request):
         if produto_id:
             try:
                 produto = Produto.objects.get(id=produto_id)
-                estoque_total = produto.estoque_total  # ✅ CORREÇÃO: Property sem parênteses
+
+                # ✅ USANDO A PROPERTY DO MODELO
+                estoque_disponivel = produto.estoque_disponivel
+
+                if estoque_disponivel == 0:
+                    messages.error(
+                        request,
+                        f'❌ Produto {produto.nome} sem estoque válido disponível!'
+                    )
+                    return redirect('criar_venda')
 
                 # Verificar se produto já está no carrinho
                 produto_existente_index = None
@@ -103,13 +119,17 @@ def criar_venda(request):
                     # Produto existe - atualizar quantidade
                     nova_quantidade = cart[produto_existente_index]['quantidade'] + quantidade
 
-                    if nova_quantidade <= estoque_total:
+                    if nova_quantidade <= estoque_disponivel:
                         cart[produto_existente_index]['quantidade'] = nova_quantidade
                         cart[produto_existente_index]['subtotal'] = cart[produto_existente_index][
                                                                         'preco_venda'] * nova_quantidade
-                        messages.success(request, f'Quantidade de {produto.nome} atualizada para {nova_quantidade}!')
+                        messages.success(request, f'✅ Quantidade de {produto.nome} atualizada para {nova_quantidade}!')
                     else:
-                        messages.error(request, f'Estoque insuficiente! Disponível: {estoque_total}')
+                        messages.error(
+                            request,
+                            f'❌ Estoque insuficiente! Disponível: {estoque_disponivel} '
+                            f'{"⚠️ Lotes vencidos não contabilizados" if produto.tem_vencido else ""}'
+                        )
 
                 else:
                     # Produto não existe - adicionar novo
@@ -117,55 +137,79 @@ def criar_venda(request):
                         'id': produto.id,
                         'nome': produto.nome,
                         'categoria_nome': produto.categoria.nome if produto.categoria else 'Sem categoria',
-                        'estoque_total': estoque_total,
+                        'categoria_tipo': produto.categoria.tipo if produto.categoria else '',
+                        'estoque_total': estoque_disponivel,
                         'unidade': unidade,
                         'quantidade': quantidade,
+                        'controlado': produto.controlado,
                     }
 
-                    # Cálculo do preço - ✅ CORREÇÃO CRÍTICA
+                    # Cálculo do preço
                     if unidade == 'caixa':
                         produto_dict['preco_venda'] = float(produto.preco_venda)
                     else:
-                        # ✅ CORREÇÃO: preco_carteira_calculado é property, não método
-                        preco_carteira = produto.preco_carteira_calculado  # SEM PARÊNTESES
+                        preco_carteira = produto.preco_carteira_calculado
                         produto_dict['preco_venda'] = float(preco_carteira) if preco_carteira else 0.0
 
                     produto_dict['subtotal'] = produto_dict['preco_venda'] * quantidade
 
-                    if quantidade <= estoque_total:
+                    if quantidade <= estoque_disponivel:
                         cart.append(produto_dict)
-                        messages.success(request, f'Produto {produto.nome} adicionado ao carrinho!')
+
+                        # ✅ ALERTA DE VALIDADE PRÓXIMA
+                        if produto.alerta_validade:
+                            messages.info(
+                                request,
+                                f"ℹ️ {produto.nome}: {produto.alerta_validade}"
+                            )
+
+                        messages.success(request, f'✅ Produto {produto.nome} adicionado ao carrinho!')
                     else:
-                        messages.error(request, f'Estoque insuficiente! Disponível: {estoque_total}')
+                        messages.error(
+                            request,
+                            f'❌ Estoque insuficiente! Disponível: {estoque_disponivel} '
+                            f'{"⚠️ Lotes vencidos não contabilizados" if produto.tem_vencido else ""}'
+                        )
 
                 # Salvar carrinho
                 request.session['cart'] = cart
                 request.session.modified = True
 
             except Produto.DoesNotExist:
-                messages.error(request, 'Produto não encontrado!')
+                messages.error(request, '❌ Produto não encontrado!')
             except Exception as e:
-                messages.error(request, f'Erro ao adicionar produto: {e}')
+                messages.error(request, f'❌ Erro ao adicionar produto: {e}')
 
             return redirect('criar_venda')
 
-    # Calcular totais
+    # Calcular totais do carrinho
     for produto in cart:
         produto['subtotal'] = produto['preco_venda'] * produto.get('quantidade', 1)
         subtotal += produto['subtotal']
 
     total = subtotal
 
+    # ✅ Informações adicionais para o template
+    total_produtos = len(produtos)
+
+
     context = {
         'cart': cart,
-        'produtos': productos,
+        'produtos': produtos,  # Apenas produtos com estoque disponível
         'subtotal': subtotal,
         'total': total,
         'formas_pagamento': formas_pagamento,
         'clientes': clientes,
+        'total_produtos_disponiveis': total_produtos,
+        # ✅ Para o template saber se deve mostrar alertas detalhados
+        'is_gerente_ou_admin': request.user.groups.filter(
+            name__in=['Gerente', 'Administrador']
+        ).exists(),
     }
 
     return render(request, 'vendas/criar_venda.html', context)
+
+
 
 
 @login_required
@@ -214,10 +258,43 @@ def finalizar_venda(request):
                     # Total solicitado
                     total_unidades = dados['caixas'] * carteiras_por_caixa + dados['carteiras']
 
-                    # Buscar lotes por validade
+                    # ✅ PASSO 1: Verificar estoque total em lotes NÃO VENCIDOS
+                    estoque_valido_total = Lote.objects.filter(
+                        produto=produto,
+                        quantidade_disponivel__gt=0,
+                        data_validade__gt=timezone.now().date()  # ✅ FILTRO CRÍTICO
+                    ).aggregate(total=Sum('quantidade_disponivel'))['total'] or 0
+
+                    # Verificar se há lotes vencidos (para informação)
+                    lotes_vencidos = Lote.objects.filter(
+                        produto=produto,
+                        quantidade_disponivel__gt=0,
+                        data_validade__lte=timezone.now().date()
+                    )
+
+                    if lotes_vencidos.exists():
+                        total_vencido = lotes_vencidos.aggregate(total=Sum('quantidade_disponivel'))['total']
+                        # Log ou mensagem interna (não mostrar ao usuário ainda)
+                        print(f"⚠️ ATENÇÃO: {produto.nome} tem {total_vencido} unidades em lotes vencidos")
+
+                    # ✅ PASSO 2: Verificar se há estoque válido suficiente
+                    if estoque_valido_total < total_unidades:
+                        mensagem = f"❌ ESTOQUE INSUFICIENTE PARA {produto.nome.upper()}\n\n"
+                        mensagem += f"📦 Solicitado: {total_unidades} unidades\n"
+                        mensagem += f"✅ Disponível em lotes válidos: {estoque_valido_total} unidades\n"
+
+                        if lotes_vencidos.exists():
+                            total_vencido = lotes_vencidos.aggregate(total=Sum('quantidade_disponivel'))['total']
+                            mensagem += f"⚠️ Bloqueado (vencido): {total_vencido} unidades\n\n"
+                            mensagem += "Os lotes vencidos foram removidos do estoque e não podem ser vendidos!"
+
+                        raise Exception(mensagem)
+
+                    # ✅ PASSO 3: Buscar apenas lotes NÃO VENCIDOS para a venda
                     lotes = Lote.objects.select_for_update().filter(
                         produto=produto,
-                        quantidade_disponivel__gt=0
+                        quantidade_disponivel__gt=0,
+                        data_validade__gt=timezone.now().date()  # ✅ FILTRO CRÍTICO
                     ).order_by("data_validade")
 
                     quantidade_restante = total_unidades
@@ -226,35 +303,16 @@ def finalizar_venda(request):
                         if quantidade_restante <= 0:
                             break
 
-                        estoque_antes = lote.quantidade_disponivel
-
-                        if estoque_antes <= quantidade_restante:
-                            # LOTE TOTALMENTE CONSUMIDO
-                            debitar = estoque_antes
-                            quantidade_restante -= debitar
-
-                            lote.quantidade_disponivel = 0
-                            lote.nr_caixas = 0
-                            lote.nr_carteiras = 0
-                            lote.save()
-
-                        else:
-                            # DÉBITO PARCIAL
-                            debitar = quantidade_restante
-                            novo_estoque = estoque_antes - debitar
-
-                            lote.quantidade_disponivel = novo_estoque
-                            lote.nr_caixas, lote.nr_carteiras = lote.converter_para_caixas_carteiras(novo_estoque)
-                            lote.save()
-
-                            quantidade_restante = 0
-
-                    # Falta de estoque
-                    if quantidade_restante > 0:
-                        raise Exception(
-                            f"Estoque insuficiente para {produto.nome}. "
-                            f"Faltam {quantidade_restante} unidades."
-                        )
+                        # Usar o método baixar_estoque que já tem validação
+                        try:
+                            if lote.quantidade_disponivel <= quantidade_restante:
+                                lote.baixar_estoque(lote.quantidade_disponivel)
+                                quantidade_restante -= lote.quantidade_disponivel
+                            else:
+                                lote.baixar_estoque(quantidade_restante)
+                                quantidade_restante = 0
+                        except ValidationError as e:
+                            raise Exception(f"Erro ao baixar estoque do lote {lote.numero_lote}: {e}")
 
                     # Criar itens da venda
                     for item in dados['itens']:
@@ -273,11 +331,11 @@ def finalizar_venda(request):
                 request.session["cart"] = []
                 request.session.modified = True
 
-                messages.success(request, f"Venda #{venda.id} finalizada com sucesso!")
+                messages.success(request, f"✅ Venda #{venda.id} finalizada com sucesso!")
                 return redirect("detalhes_venda", venda_id=venda.id)
 
         except Exception as e:
-            messages.error(request, f"Erro ao finalizar venda: {e}")
+            messages.error(request, str(e))
             return redirect("criar_venda")
 
     return redirect("criar_venda")
@@ -398,6 +456,11 @@ def detalhes_venda(request, venda_id):
     })
 
 
+
+
+
+
+
 def imprimir_recibo_imagem(request, venda_id):
     venda = get_object_or_404(Venda, id=venda_id)
     recibo_texto = render_to_string('vendas/recibo_termico.txt', {'venda': venda})
@@ -441,3 +504,43 @@ def imprimir_recibo_imagem(request, venda_id):
     return render(request, 'vendas/imprimir_recibo.html', {'img_base64': img_base64})
 
 
+
+
+
+# def imprimir_recibo_imagem(request, venda_id):
+#     venda = get_object_or_404(Venda, id=venda_id)
+#     recibo_texto = render_to_string('vendas/recibo_termico.txt', {'venda': venda})
+#
+#     # Ajuste do tamanho da fonte e cálculo da altura
+#     try:
+#         font = ImageFont.truetype("Courier", 17)
+#         # font = ImageFont.load_default(size=18)
+#     except IOError:
+#         font = ImageFont.load_default(size=18)
+#
+#     # Calcular a altura da imagem com base no texto
+#     largura = 400
+#     altura_texto = 0
+#     draw = ImageDraw.Draw(Image.new("RGB", (largura, 1)))  # Usar uma imagem temporária para medir o texto
+#
+#     # Usar textbbox para calcular o tamanho do texto
+#     for linha in recibo_texto.split('\n'):
+#         _, _, _, altura_linha = draw.textbbox((0, 0), linha, font=font)  # Retorna as coordenadas da caixa delimitadora
+#         altura_texto += altura_linha + 6  # +4 para o espaçamento entre as linhas
+#
+#     altura = max(altura_texto, 100)  # Garantir que a altura mínima seja 100px
+#
+#     # Criar a imagem com a altura calculada
+#     img = Image.new("RGB", (largura, altura), "white")
+#     draw = ImageDraw.Draw(img)
+#
+#     # Desenhar o texto
+#     draw.multiline_text((10, 10), recibo_texto, fill="black", font=font, spacing=4)
+#
+#     # Salvar a imagem em Base64 para exibir no HTML
+#     buffer = io.BytesIO()
+#     img.save(buffer, format="PNG")
+#     buffer.seek(0)
+#     img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+#
+#     return render(request, 'vendas/imprimir_recibo.html', {'img_base64': img_base64})
