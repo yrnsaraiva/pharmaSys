@@ -10,8 +10,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-o%cf1_-^p95dr-aupdnimbg_-k@xugqx70f79_##63h9&ox1!y')
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# DEBUG deve ser False em produção
-DEBUG == 'true'
+# DEBUG deve ser False em produção - CORRIGIDO
+DEBUG = os.environ.get('DEBUG', 'False') == 'true'
 
 # Hosts permitidos - mais seguro para produção
 ALLOWED_HOSTS = [
@@ -82,6 +82,7 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -137,7 +138,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # ==========================
 # INTERNATIONALIZATION
 # ==========================
-LANGUAGE_CODE = 'pt-pt'  # Mudado para português
+LANGUAGE_CODE = 'pt-pt'
 TIME_ZONE = 'Africa/Maputo'
 USE_I18N = True
 USE_TZ = True
@@ -153,7 +154,7 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # ==========================
-# MEDIA FILES (se necessário)
+# MEDIA FILES
 # ==========================
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -168,3 +169,14 @@ LOGOUT_REDIRECT_URL = '/usuarios/login/'
 # ==========================
 # SECURITY SETTINGS FOR PRODUCTION
 # ==========================
+if not DEBUG:
+    # Configurações de segurança para produção
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 ano
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    X_FRAME_OPTIONS = 'DENY'
