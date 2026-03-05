@@ -649,8 +649,6 @@ def exportar_produtos_excel(request):
     if total_estoque_vencido > 0:
         alert_row = summary_row + len(resumo) + 2
         ws.merge_cells(f'A{alert_row}:K{alert_row}')
-        ws[
-            f'A{alert_row}'] = f"⚠️ ATENÇÃO: Existem {total_estoque_vencido} unidades em lotes vencidos que precisam ser removidas do estoque!"
         ws[f'A{alert_row}'].font = Font(bold=True, color="FF0000")
         ws[f'A{alert_row}'].fill = PatternFill(start_color="FFE6E6", end_color="FFE6E6", fill_type="solid")
         ws[f'A{alert_row}'].alignment = center_align
