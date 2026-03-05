@@ -18,6 +18,7 @@ ALLOWED_HOSTS = [
     'pharmasys-production.up.railway.app',
     'localhost',
     '127.0.0.1',
+    'pharmasys.up.railway.app',  # 👈 ADICIONE ESTA LINHA
 ]
 
 # Se DEBUG=True, permite todos os hosts para desenvolvimento
