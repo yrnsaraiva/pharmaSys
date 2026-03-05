@@ -104,7 +104,7 @@ DATABASES = {
 }
 
 # Configuração do PostgreSQL para Railway
-POSTGRES_LOCALLY = False  # Mude para True se quiser PostgreSQL local
+POSTGRES_LOCALLY = True  # Mude para True se quiser PostgreSQL local
 
 # No Railway, sempre usa PostgreSQL
 if os.environ.get('RAILWAY_ENVIRONMENT') or not DEBUG or POSTGRES_LOCALLY:
