@@ -312,7 +312,7 @@ class Lote(models.Model):
             if self.data_validade and self.data_validade < timezone.now().date():
                 raise ValidationError("Data de validade não pode ser no passado")
 
-    
+
 
     @property
     def total_unidades(self):
