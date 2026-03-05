@@ -11,7 +11,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-o%cf1_-^p95dr-aupdnim
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # DEBUG deve ser False em produção
-DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
+DEBUG == 'true'
 
 # Hosts permitidos - mais seguro para produção
 ALLOWED_HOSTS = [
@@ -168,14 +168,3 @@ LOGOUT_REDIRECT_URL = '/usuarios/login/'
 # ==========================
 # SECURITY SETTINGS FOR PRODUCTION
 # ==========================
-if not DEBUG:
-    # Security settings para produção
-    SECURE_SSL_REDIRECT = True
-    SECURE_HSTS_SECONDS = 31536000  # 1 year
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_BROWSER_XSS_FILTER = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    X_FRAME_OPTIONS = 'DENY'
