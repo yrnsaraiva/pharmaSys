@@ -237,9 +237,20 @@ class ProdutoAdmin(ImportExportModelAdmin):
 # ---------------------------------------------------
 # Admin Lote (mantido igual)
 # ---------------------------------------------------
+# @admin.register(Lote)
+# class LoteAdmin(ImportExportModelAdmin):
+#     resource_class = LoteResource
+#     list_display = ('numero_lote', 'produto', 'nr_caixas', 'quantidade_disponivel', 'data_validade')
+#     list_filter = ('produto__categoria__tipo',)
+#     search_fields = ('numero_lote', 'produto__nome')
+
+
 @admin.register(Lote)
 class LoteAdmin(ImportExportModelAdmin):
     resource_class = LoteResource
     list_display = ('numero_lote', 'produto', 'nr_caixas', 'quantidade_disponivel', 'data_validade')
     list_filter = ('produto__categoria__tipo',)
     search_fields = ('numero_lote', 'produto__nome')
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)

@@ -1,0 +1,36 @@
+================================================================================
+RELATÓRIO DE ERROS - IMPORTACAÇÃO DE LOTES
+================================================================================
+Data: 20/12/2025 15:09:38
+Arquivo: lotes.xlsx
+Total de erros: 27
+--------------------------------------------------------------------------------
+
+Linha 23: Produto 'Acefen 400 mg comp.' não encontrado
+Linha 42: Produto 'Adalat Cr 30 MG comp.' não encontrado
+Linha 132: Produto 'Babymed po talco 125  mg' não encontrado
+Linha 171: Produto 'Betamox plus 1 g 16 comp' não encontrado
+Linha 223: Produto 'Carvidilol ciclum 6.25mg' não encontrado
+Linha 270: Produto 'Cogate max fresh' não encontrado
+Linha 275: Data de fabricação após validade
+Linha 353: Produto 'Efferflu C immune booster 200mg junior' não encontrado
+Linha 390: Produto 'Fedaloc 60 mg  comp.' não encontrado
+Linha 394: Produto 'Fiesta preservativos' não encontrado
+Linha 476: Produto 'Histadin 10 mg comp' não encontrado
+Linha 499: Produto 'Jeito preservativo' não encontrado
+Linha 529: Produto 'Lauroderme po  50 g' não encontrado
+Linha 544: Data de fabricação após validade
+Linha 563: Data de fabricação após validade
+Linha 645: Data de fabricação futura
+Linha 649: Produto 'Nobreza pensos  higienicos' não encontrado
+Linha 650: Produto 'Nova Power comp.' não encontrado
+Linha 653: Data de fabricação após validade
+Linha 730: Produto 'Progesty intimo' não encontrado
+Linha 738: Produto 'Prudence preservativo' não encontrado
+Linha 776: Produto 'Seringa 1 ml' não encontrado
+Linha 777: Produto 'Seringa 5 ml' não encontrado
+Linha 778: Produto 'Seringas 10 ml' não encontrado
+Linha 781: Produto 'Shibudal comp.' não encontrado
+Linha 870: Valores numéricos inválidos
+Linha 930: Produto 'Teste de Hiv' não encontrado
+================================================================================

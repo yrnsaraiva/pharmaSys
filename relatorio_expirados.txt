@@ -1,0 +1,212 @@
+================================================================================
+RELATÓRIO DE LOTES COM VALIDADE EXPIRADA
+================================================================================
+Data do relatório: 20/12/2025 15:09:39
+Data de verificação: 20/12/2025
+--------------------------------------------------------------------------------
+
+DETALHES POR PRODUTO:
+--------------------------------------------------------------------------------
+
+PRODUTO: Ben -u-ron 500  mg comp.
+Total de lotes expirados: 1
+Total de caixas expiradas: 8
+Total de carteiras expiradas: 0
+Total de unidades expiradas: 0
+
+LOTES EXPIRADOS:
+  • LOTE: 
+    Produto: Ben -u-ron 500  mg comp.
+    Validade: 01/01/2025 (Expirado há 353 dias)
+    Caixas: 8
+    Carteiras: 0
+    Unidades: 0
+    ----------
+
+PRODUTO: Betametasona basi crème
+Total de lotes expirados: 1
+Total de caixas expiradas: 5
+Total de carteiras expiradas: 0
+Total de unidades expiradas: 0
+
+LOTES EXPIRADOS:
+  • LOTE: 
+    Produto: Betametasona basi crème
+    Validade: 01/09/2025 (Expirado há 110 dias)
+    Caixas: 5
+    Carteiras: 0
+    Unidades: 0
+    ----------
+
+PRODUTO: Betapyn 18 comp.
+Total de lotes expirados: 1
+Total de caixas expiradas: 0
+Total de carteiras expiradas: 0
+Total de unidades expiradas: 0
+
+LOTES EXPIRADOS:
+  • LOTE: 
+    Produto: Betapyn 18 comp.
+    Validade: 01/11/2025 (Expirado há 49 dias)
+    Caixas: 0
+    Carteiras: 0
+    Unidades: 0
+    ----------
+
+PRODUTO: Candiderm corticosteroide  15 g crème
+Total de lotes expirados: 1
+Total de caixas expiradas: 0
+Total de carteiras expiradas: 0
+Total de unidades expiradas: 0
+
+LOTES EXPIRADOS:
+  • LOTE: 
+    Produto: Candiderm corticosteroide  15 g crème
+    Validade: 01/04/2025 (Expirado há 263 dias)
+    Caixas: 0
+    Carteiras: 0
+    Unidades: 0
+    ----------
+
+PRODUTO: Cicloviral Crème 50 mg
+Total de lotes expirados: 1
+Total de caixas expiradas: 1
+Total de carteiras expiradas: 0
+Total de unidades expiradas: 0
+
+LOTES EXPIRADOS:
+  • LOTE: 
+    Produto: Cicloviral Crème 50 mg
+    Validade: 01/06/2025 (Expirado há 202 dias)
+    Caixas: 1
+    Carteiras: 0
+    Unidades: 0
+    ----------
+
+PRODUTO: cottonetes naomi 200 pcs
+Total de lotes expirados: 1
+Total de caixas expiradas: 1
+Total de carteiras expiradas: 1
+Total de unidades expiradas: 0
+
+LOTES EXPIRADOS:
+  • LOTE: 
+    Produto: cottonetes naomi 200 pcs
+    Validade: 01/01/2025 (Expirado há 353 dias)
+    Caixas: 1
+    Carteiras: 1
+    Unidades: 0
+    ----------
+
+PRODUTO: Dermacol crème
+Total de lotes expirados: 1
+Total de caixas expiradas: 6
+Total de carteiras expiradas: 0
+Total de unidades expiradas: 0
+
+LOTES EXPIRADOS:
+  • LOTE: 
+    Produto: Dermacol crème
+    Validade: 01/07/2025 (Expirado há 172 dias)
+    Caixas: 6
+    Carteiras: 0
+    Unidades: 0
+    ----------
+
+PRODUTO: Galvusmet 50x500mg caps
+Total de lotes expirados: 1
+Total de caixas expiradas: 0
+Total de carteiras expiradas: 2
+Total de unidades expiradas: 0
+
+LOTES EXPIRADOS:
+  • LOTE: 
+    Produto: Galvusmet 50x500mg caps
+    Validade: 01/12/2025 (Expirado há 19 dias)
+    Caixas: 0
+    Carteiras: 2
+    Unidades: 0
+    ----------
+
+PRODUTO: Levomac 500 mg comp.
+Total de lotes expirados: 1
+Total de caixas expiradas: 0
+Total de carteiras expiradas: 0
+Total de unidades expiradas: 0
+
+LOTES EXPIRADOS:
+  • LOTE: 
+    Produto: Levomac 500 mg comp.
+    Validade: 01/11/2025 (Expirado há 49 dias)
+    Caixas: 0
+    Carteiras: 0
+    Unidades: 0
+    ----------
+
+PRODUTO: Mucolyn adulto xarope
+Total de lotes expirados: 1
+Total de caixas expiradas: 4
+Total de carteiras expiradas: 0
+Total de unidades expiradas: 0
+
+LOTES EXPIRADOS:
+  • LOTE: 
+    Produto: Mucolyn adulto xarope
+    Validade: 01/07/2025 (Expirado há 172 dias)
+    Caixas: 4
+    Carteiras: 0
+    Unidades: 0
+    ----------
+
+PRODUTO: Sultrimix 240 mg x 5 ml  suspensao oral
+Total de lotes expirados: 1
+Total de caixas expiradas: 1
+Total de carteiras expiradas: 0
+Total de unidades expiradas: 0
+
+LOTES EXPIRADOS:
+  • LOTE: 
+    Produto: Sultrimix 240 mg x 5 ml  suspensao oral
+    Validade: 01/11/2025 (Expirado há 49 dias)
+    Caixas: 1
+    Carteiras: 0
+    Unidades: 0
+    ----------
+
+PRODUTO: Supidon 25x 20 mg/ml 200ml xarope
+Total de lotes expirados: 1
+Total de caixas expiradas: 0
+Total de carteiras expiradas: 0
+Total de unidades expiradas: 0
+
+LOTES EXPIRADOS:
+  • LOTE: 
+    Produto: Supidon 25x 20 mg/ml 200ml xarope
+    Validade: 01/10/2025 (Expirado há 80 dias)
+    Caixas: 0
+    Carteiras: 0
+    Unidades: 0
+    ----------
+
+PRODUTO: Ventosha cp 4 mg 10x10
+Total de lotes expirados: 1
+Total de caixas expiradas: 10
+Total de carteiras expiradas: 0
+Total de unidades expiradas: 0
+
+LOTES EXPIRADOS:
+  • LOTE: 
+    Produto: Ventosha cp 4 mg 10x10
+    Validade: 01/04/2025 (Expirado há 263 dias)
+    Caixas: 10
+    Carteiras: 0
+    Unidades: 0
+    ----------
+
+================================================================================
+RESUMO GERAL:
+================================================================================
+Total de lotes expirados: 13
+Total de produtos diferentes: 13
+Total de unidades expiradas: 0
+================================================================================

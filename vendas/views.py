@@ -76,6 +76,17 @@ def listar_vendas(request):
 def criar_venda(request):
     formas_pagamento = Venda.FORMA_PAGAMENTO_CHOICES
     clientes = Cliente.objects.all().order_by('nome')
+<<<<<<< HEAD
+
+    # ✅ USANDO AS PROPERTIES DO MODELO
+    # Buscar todos os produtos
+    todos_produtos = Produto.objects.all().order_by('nome')
+
+    # Filtrar apenas os que têm estoque disponível (usando a property)
+    produtos = [p for p in todos_produtos if p.tem_estoque]
+
+
+=======
     
     # ✅ USANDO AS PROPERTIES DO MODELO
     # Buscar todos os produtos
@@ -104,6 +115,7 @@ def criar_venda(request):
         else:
             # Para vendedores, mensagem mais simples
             messages.info(request, "Alguns produtos estão indisponíveis devido à validade vencida.")
+>>>>>>> 8ee2a60a377de4eaa26bac496a615fc73297c848
 
     cart = request.session.get('cart', [])
     total = 0
@@ -117,13 +129,21 @@ def criar_venda(request):
         if produto_id:
             try:
                 produto = Produto.objects.get(id=produto_id)
+<<<<<<< HEAD
+
+=======
                 
+>>>>>>> 8ee2a60a377de4eaa26bac496a615fc73297c848
                 # ✅ USANDO A PROPERTY DO MODELO
                 estoque_disponivel = produto.estoque_disponivel
 
                 if estoque_disponivel == 0:
                     messages.error(
+<<<<<<< HEAD
+                        request,
+=======
                         request, 
+>>>>>>> 8ee2a60a377de4eaa26bac496a615fc73297c848
                         f'❌ Produto {produto.nome} sem estoque válido disponível!'
                     )
                     return redirect('criar_venda')
@@ -146,7 +166,11 @@ def criar_venda(request):
                         messages.success(request, f'✅ Quantidade de {produto.nome} atualizada para {nova_quantidade}!')
                     else:
                         messages.error(
+<<<<<<< HEAD
+                            request,
+=======
                             request, 
+>>>>>>> 8ee2a60a377de4eaa26bac496a615fc73297c848
                             f'❌ Estoque insuficiente! Disponível: {estoque_disponivel} '
                             f'{"⚠️ Lotes vencidos não contabilizados" if produto.tem_vencido else ""}'
                         )
@@ -175,6 +199,20 @@ def criar_venda(request):
 
                     if quantidade <= estoque_disponivel:
                         cart.append(produto_dict)
+<<<<<<< HEAD
+
+                        # ✅ ALERTA DE VALIDADE PRÓXIMA
+                        if produto.alerta_validade:
+                            messages.info(
+                                request,
+                                f"ℹ️ {produto.nome}: {produto.alerta_validade}"
+                            )
+
+                        messages.success(request, f'✅ Produto {produto.nome} adicionado ao carrinho!')
+                    else:
+                        messages.error(
+                            request,
+=======
                         
                         # ✅ ALERTA DE VALIDADE PRÓXIMA
                         if produto.alerta_validade:
@@ -187,6 +225,7 @@ def criar_venda(request):
                     else:
                         messages.error(
                             request, 
+>>>>>>> 8ee2a60a377de4eaa26bac496a615fc73297c848
                             f'❌ Estoque insuficiente! Disponível: {estoque_disponivel} '
                             f'{"⚠️ Lotes vencidos não contabilizados" if produto.tem_vencido else ""}'
                         )
@@ -211,8 +250,12 @@ def criar_venda(request):
 
     # ✅ Informações adicionais para o template
     total_produtos = len(produtos)
+<<<<<<< HEAD
+
+=======
     total_com_vencido = len(produtos_com_vencido)
     total_unidades_vencidas = sum(p.estoque_vencido for p in produtos_com_vencido)
+>>>>>>> 8ee2a60a377de4eaa26bac496a615fc73297c848
 
     context = {
         'cart': cart,
@@ -222,10 +265,13 @@ def criar_venda(request):
         'formas_pagamento': formas_pagamento,
         'clientes': clientes,
         'total_produtos_disponiveis': total_produtos,
+<<<<<<< HEAD
+=======
         'total_produtos_vencidos': total_com_vencido,
         'total_unidades_vencidas': total_unidades_vencidas,
         'tem_produtos_vencidos': total_com_vencido > 0,
         
+>>>>>>> 8ee2a60a377de4eaa26bac496a615fc73297c848
         # ✅ Para o template saber se deve mostrar alertas detalhados
         'is_gerente_ou_admin': request.user.groups.filter(
             name__in=['Gerente', 'Administrador']
@@ -236,6 +282,10 @@ def criar_venda(request):
 
 
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> 8ee2a60a377de4eaa26bac496a615fc73297c848
 @login_required
 @vendedor_required
 def finalizar_venda(request):
@@ -567,4 +617,8 @@ def imprimir_recibo_imagem(request, venda_id):
 #     buffer.seek(0)
 #     img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
 #
+<<<<<<< HEAD
 #     return render(request, 'vendas/imprimir_recibo.html', {'img_base64': img_base64})
+=======
+#     return render(request, 'vendas/imprimir_recibo.html', {'img_base64': img_base64})
+>>>>>>> 8ee2a60a377de4eaa26bac496a615fc73297c848

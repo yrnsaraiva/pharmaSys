@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página Não Encontrada | 404</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .error-content {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            padding: 60px 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            width: 90%;
+            max-width: 800px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .error-number {
+            font-size: 12rem;
+            font-weight: 900;
+            color: #667eea;
+            line-height: 1;
+            margin-bottom: 10px;
+            text-shadow: 5px 5px 0 rgba(102, 126, 234, 0.1);
+            position: relative;
+            display: inline-block;
+        }
+
+        .error-number:after {
+            content: '';
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: -1;
+        }
+
+        .error-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 15px;
+        }
+
+        .error-description {
+            font-size: 1.2rem;
+            color: #4a5568;
+            line-height: 1.6;
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+
+        .search-box {
+            max-width: 500px;
+            margin: 0 auto 40px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 18px 60px 18px 25px;
+            border: 2px solid #e2e8f0;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.2);
+        }
+
+        .search-button {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-button:hover {
+            transform: translateY(-50%) scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+
+        .btn {
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-decoration: none;
+            min-width: 180px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background-color: #edf2f7;
+            color: #2d3748;
+            border: 2px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            background-color: #e2e8f0;
+            transform: translateY(-3px);
+        }
+
+        .site-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 800px;
+            margin-top: 30px;
+        }
+
+        .link-section {
+            background-color: white;
+            border-radius: 16px;
+            padding: 25px;
+            text-align: left;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+        }
+
+        .link-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .link-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .link-title i {
+            color: #667eea;
+        }
+
+        .link-list {
+            list-style: none;
+        }
+
+        .link-list li {
+            margin-bottom: 10px;
+        }
+
+        .link-list a {
+            color: #4a5568;
+            text-decoration: none;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .link-list a:hover {
+            color: #667eea;
+        }
+
+        .link-list a i {
+            font-size: 0.8rem;
+        }
+
+        .floating-elements {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .floating-element {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            animation: float 20s infinite linear;
+        }
+
+        .floating-element:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .floating-element:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 60%;
+            left: 5%;
+            animation-delay: -5s;
+        }
+
+        .floating-element:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            top: 20%;
+            right: 10%;
+            animation-delay: -10s;
+        }
+
+        .floating-element:nth-child(4) {
+            width: 100px;
+            height: 100px;
+            top: 70%;
+            right: 15%;
+            animation-delay: -15s;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0) rotate(0deg);
+            }
+            100% {
+                transform: translateY(-1000px) rotate(720deg);
+            }
+        }
+
+        .error-illustration {
+            margin-bottom: 30px;
+            font-size: 8rem;
+            color: #667eea;
+            position: relative;
+            display: inline-block;
+        }
+
+        .error-illustration:after {
+            content: '?';
+            position: absolute;
+            font-size: 4rem;
+            color: #764ba2;
+            top: -20px;
+            right: -30px;
+            transform: rotate(15deg);
+        }
+
+        .navigation {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 40px;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 16px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .logo i {
+            font-size: 1.8rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 25px;
+        }
+
+        .nav-links a {
+            color: #4a5568;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #667eea;
+        }
+
+        .footer {
+            margin-top: 50px;
+            color: white;
+            text-align: center;
+            font-size: 0.9rem;
+            opacity: 0.9;
+            max-width: 800px;
+            width: 100%;
+            padding: 20px;
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: none;
+            border-bottom: 1px dotted rgba(255, 255, 255, 0.5);
+        }
+
+        .footer a:hover {
+            border-bottom: 1px solid white;
+        }
+
+        .error-details {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f7fafc;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            text-align: left;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .error-details summary {
+            font-weight: 600;
+            cursor: pointer;
+            color: #667eea;
+            margin-bottom: 10px;
+            user-select: none;
+        }
+
+        .error-details pre {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            margin-top: 15px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+        }
+
+        @media (max-width: 768px) {
+            .error-number {
+                font-size: 8rem;
+            }
+
+            .error-title {
+                font-size: 2rem;
+            }
+
+            .error-content {
+                padding: 40px 25px;
+            }
+
+            .actions {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .navigation {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 15px;
+            }
+
+            .site-links {
+                grid-template-columns: 1fr;
+            }
+
+            .error-illustration {
+                font-size: 6rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .error-number {
+                font-size: 6rem;
+            }
+
+            .error-title {
+                font-size: 1.7rem;
+            }
+
+            .error-description {
+                font-size: 1rem;
+            }
+
+            .error-content {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="floating-elements">
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+    </div>
+
+    <div class="container">
+        <nav class="navigation">
+            <a href="#" class="logo">
+                <i class="fas fa-globe"></i>
+                <span>WebSite</span>
+            </a>
+            <div class="nav-links">
+                <a href="#"><i class="fas fa-home"></i> Início</a>
+                <a href="#"><i class="fas fa-info-circle"></i> Sobre</a>
+                <a href="#"><i class="fas fa-blog"></i> Blog</a>
+                <a href="#"><i class="fas fa-envelope"></i> Contato</a>
+            </div>
+        </nav>
+
+        <div class="error-content">
+            <div class="error-illustration">
+                <i class="fas fa-map-signs"></i>
+            </div>
+
+            <div class="error-number">404</div>
+            <h1 class="error-title">Página Não Encontrada</h1>
+            <p class="error-description">
+                A página que você está procurando pode ter sido removida, ter seu nome alterado ou estar temporariamente indisponível.
+            </p>
+
+            <div class="search-box">
+                <input type="text" class="search-input" placeholder="O que você está procurando?">
+                <button class="search-button">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+
+            <div class="actions">
+                <a href="#" class="btn btn-primary">
+                    <i class="fas fa-home"></i> Voltar para o Início
+                </a>
+                <a href="#" class="btn btn-secondary">
+                    <i class="fas fa-history"></i> Voltar à Página Anterior
+                </a>
+            </div>
+
+            <div class="error-details">
+                <summary>Detalhes Técnicos</summary>
+                <pre>Erro 404: Not Found
+URL: <span id="current-url">Carregando...</span>
+Data/Hora: <span id="timestamp">Carregando...</span>
+Navegador: <span id="browser-info">Carregando...</span>
+Sistema: <span id="os-info">Carregando...</span></pre>
+            </div>
+        </div>
+
+        <div class="site-links">
+            <div class="link-section">
+                <h3 class="link-title">
+                    <i class="fas fa-sitemap"></i> Navegação
+                </h3>
+                <ul class="link-list">
+                    <li><a href="#"><i class="fas fa-chevron-right"></i> Página Inicial</a></li>
+                    <li><a href="#"><i class="fas fa-chevron-right"></i> Sobre Nós</a></li>
+                    <li><a href="#"><i class="fas fa-chevron-right"></i> Nossos Serviços</a></li>
+                    <li><a href="#"><i class="fas fa-chevron-right"></i> Portfólio</a></li>
+                </ul>
+            </div>
+
+            <div class="link-section">
+                <h3 class="link-title">
+                    <i class="fas fa-newspaper"></i> Conteúdo Recente
+                </h3>
+                <ul class="link-list">
+                    <li><a href="#"><i class="fas fa-chevron-right"></i> Últimas Notícias</a></li>
+                    <li><a href="#"><i class="fas fa-chevron-right"></i> Blog de Tecnologia</a></li>
+                    <li><a href="#"><i class="fas fa-chevron-right"></i> Tutoriais</a></li>
+                    <li><a href="#"><i class="fas fa-chevron-right"></i> FAQ</a></li>
+                </ul>
+            </div>
+
+            <div class="link-section">
+                <h3 class="link-title">
+                    <i class="fas fa-headset"></i> Suporte
+                </h3>
+                <ul class="link-list">
+                    <li><a href="#"><i class="fas fa-chevron-right"></i> Central de Ajuda</a></li>
+                    <li><a href="#"><i class="fas fa-chevron-right"></i> Fale Conosco</a></li>
+                    <li><a href="#"><i class="fas fa-chevron-right"></i> Status do Sistema</a></li>
+                    <li><a href="#"><i class="fas fa-chevron-right"></i> Reportar Problema</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 2023 WebSite. Todos os direitos reservados.</p>
+        <p style="margin-top: 10px;">
+            <a href="#">Política de Privacidade</a> |
+            <a href="#">Termos de Uso</a> |
+            <a href="#">Mapa do Site</a>
+        </p>
+    </div>
+
+    <script>
+        // Detectar informações do usuário
+        document.getElementById('current-url').textContent = window.location.href;
+
+        const now = new Date();
+        document.getElementById('timestamp').textContent = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR');
+
+        // Detectar navegador
+        const userAgent = navigator.userAgent;
+        let browserInfo = "Desconhecido";
+        let osInfo = "Desconhecido";
+
+        // Detectar navegador
+        if (userAgent.indexOf("Firefox") > -1) {
+            browserInfo = "Mozilla Firefox";
+        } else if (userAgent.indexOf("Chrome") > -1) {
+            browserInfo = "Google Chrome";
+        } else if (userAgent.indexOf("Safari") > -1) {
+            browserInfo = "Apple Safari";
+        } else if (userAgent.indexOf("Edge") > -1) {
+            browserInfo = "Microsoft Edge";
+        } else if (userAgent.indexOf("Opera") > -1 || userAgent.indexOf("OPR") > -1) {
+            browserInfo = "Opera";
+        } else if (userAgent.indexOf("Trident") > -1) {
+            browserInfo = "Internet Explorer";
+        }
+
+        // Detectar sistema operacional
+        if (userAgent.indexOf("Windows") > -1) {
+            osInfo = "Windows";
+        } else if (userAgent.indexOf("Mac") > -1) {
+            osInfo = "macOS";
+        } else if (userAgent.indexOf("Linux") > -1) {
+            osInfo = "Linux";
+        } else if (userAgent.indexOf("Android") > -1) {
+            osInfo = "Android";
+        } else if (userAgent.indexOf("iOS") > -1) {
+            osInfo = "iOS";
+        }
+
+        document.getElementById('browser-info').textContent = browserInfo;
+        document.getElementById('os-info').textContent = osInfo;
+
+        // Funcionalidade de busca
+        const searchButton = document.querySelector('.search-button');
+        const searchInput = document.querySelector('.search-input');
+
+        searchButton.addEventListener('click', function() {
+            performSearch();
+        });
+
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        function performSearch() {
+            const query = searchInput.value.trim();
+            if (query) {
+                // Em um site real, isso redirecionaria para a página de busca
+                alert(`Buscando por: "${query}"\n\nEm um site real, você seria redirecionado para os resultados da busca.`);
+                // window.location.href = `/search?q=${encodeURIComponent(query)}`;
+            } else {
+                searchInput.focus();
+            }
+        }
+
+        // Botão de voltar à página anterior
+        document.querySelector('.btn-secondary').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (document.referrer) {
+                window.history.back();
+            } else {
+                alert("Não há página anterior no histórico de navegação.");
+            }
+        });
+
+        // Animação dos elementos flutuantes
+        const floatingElements = document.querySelectorAll('.floating-element');
+        floatingElements.forEach(element => {
+            // Posicionamento aleatório
+            const randomX = Math.random() * 100;
+            const randomY = Math.random() * 100;
+            element.style.left = `${randomX}%`;
+            element.style.top = `${randomY}%`;
+
+            // Tamanho aleatório
+            const randomSize = 40 + Math.random() * 100;
+            element.style.width = `${randomSize}px`;
+            element.style.height = `${randomSize}px`;
+
+            // Atraso de animação aleatório
+            const randomDelay = Math.random() * 20;
+            element.style.animationDelay = `-${randomDelay}s`;
+        });
+
+        // Alternar detalhes do erro
+        const detailsElement = document.querySelector('.error-details');
+        detailsElement.addEventListener('toggle', function() {
+            if (detailsElement.open) {
+                detailsElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        });
+    </script>
+</body>
+</html>
