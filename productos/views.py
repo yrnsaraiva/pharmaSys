@@ -425,7 +425,7 @@ def remover_lote(request, pk):
     lote.delete()  # Apaga o lote diretamente
     messages.success(request, f"✅ Lote '{lote.numero_lote}' do produto '{lote.produto.nome}' foi excluído com sucesso!")
     return redirect("listar_lotes")
-    
+
 @login_required
 @gerente_required
 def editar_lote(request, pk):
@@ -474,6 +474,18 @@ def editar_lote(request, pk):
         "today": timezone.now().date()
     }
     return render(request, "productos/novo_lote.html", context)
+
+
+# productos/views.py - Adicione no final do arquivo
+
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
+from django.http import HttpResponse
+from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+from core.decorators import gerente_required
+
+
 @login_required
 @gerente_required
 def exportar_produtos_excel(request):
@@ -501,7 +513,7 @@ def exportar_produtos_excel(request):
     center_align = Alignment(horizontal='center', vertical='center')
 
     # ===== TÍTULO =====
-    ws.merge_cells('A1:K1')  # Aumentei para K para acomodar nova coluna
+    ws.merge_cells('A1:K1')
     ws['A1'] = "RELATÓRIO DE ESTOQUE - BALANÇO DE PRODUTOS"
     ws['A1'].font = title_font
     ws['A1'].alignment = center_align
@@ -514,7 +526,7 @@ def exportar_produtos_excel(request):
 
     # ===== CABEÇALHO =====
     headers = [
-        'Produto', 'Categoria', 'Código Barras', 'Lotes Válidos',
+        'Produto', 'Categoria', 'Código Barras', 'Lotes Ativos',
         'Estoque Disponível', 'Estoque Vencido', 'Estoque Mínimo', 'Status',
         'Preço Venda', 'Rendimento (válido)', 'Valor Investido (válido)'
     ]
@@ -533,19 +545,19 @@ def exportar_produtos_excel(request):
     total_estoque_vencido = 0
     total_rendimento_valido = 0
     total_investido_valido = 0
-    
+
     for produto in produtos:
-        # ✅ PROPRIEDADES CORRETAS (SEM VENCIDOS)
+        # ✅ PROPRIEDADES CORRETAS DO SEU MODELO
         estoque_disponivel = produto.estoque_disponivel
         estoque_vencido = produto.estoque_vencido
-        num_lotes_validos = produto.lotes_validos_ativos
-        status_estoque = produto.status_estoque  # Já usa apenas estoque_disponivel
+        num_lotes_ativos = produto.lotes_ativos  # ← CORRIGIDO: lotes_ativos
+        status_estoque = produto.status_estoque
 
         # Acumular totais para resumo
         total_estoque_disponivel += estoque_disponivel
         total_estoque_vencido += estoque_vencido
-        total_rendimento_valido += produto.rendimento_total_valido
-        total_investido_valido += produto.valor_investido_total_valido
+        total_rendimento_valido += produto.rendimento_potencial
+        total_investido_valido += produto.valor_investido
 
         if status_estoque == "esgotado":
             status = "SEM ESTOQUE"
@@ -561,14 +573,14 @@ def exportar_produtos_excel(request):
             produto.nome,
             produto.categoria.nome if produto.categoria else 'N/A',
             produto.codigo_barras or 'N/A',
-            num_lotes_validos,
+            num_lotes_ativos,
             estoque_disponivel,
             estoque_vencido,
             produto.estoque_minimo,
             status,
             float(produto.preco_venda or 0),
-            float(produto.rendimento_total_valido),
-            float(produto.valor_investido_total_valido)
+            float(produto.rendimento_potencial),
+            float(produto.valor_investido)
         ])
 
         for col in range(1, len(headers) + 1):
@@ -594,7 +606,7 @@ def exportar_produtos_excel(request):
     # ===== LARGURA DAS COLUNAS =====
     widths = {
         'A': 40, 'B': 20, 'C': 15, 'D': 12,
-        'E': 15, 'F': 15, 'G': 15, 'H': 15, 
+        'E': 15, 'F': 15, 'G': 15, 'H': 15,
         'I': 15, 'J': 20, 'K': 20
     }
     for col, width in widths.items():
@@ -637,7 +649,8 @@ def exportar_produtos_excel(request):
     if total_estoque_vencido > 0:
         alert_row = summary_row + len(resumo) + 2
         ws.merge_cells(f'A{alert_row}:K{alert_row}')
-        ws[f'A{alert_row}'] = f"⚠️ ATENÇÃO: Existem {total_estoque_vencido} unidades em lotes vencidos que precisam ser removidas do estoque!"
+        ws[
+            f'A{alert_row}'] = f"⚠️ ATENÇÃO: Existem {total_estoque_vencido} unidades em lotes vencidos que precisam ser removidas do estoque!"
         ws[f'A{alert_row}'].font = Font(bold=True, color="FF0000")
         ws[f'A{alert_row}'].fill = PatternFill(start_color="FFE6E6", end_color="FFE6E6", fill_type="solid")
         ws[f'A{alert_row}'].alignment = center_align
@@ -649,7 +662,4 @@ def exportar_produtos_excel(request):
     response['Content-Disposition'] = 'attachment; filename="relatorio_estoque.xlsx"'
     wb.save(response)
     return response
-
-
-
 
